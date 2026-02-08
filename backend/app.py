@@ -1,6 +1,5 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from datetime import datetime
 
 app = FastAPI()
 
@@ -11,22 +10,29 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-data_store = []
+DATA = []
 
 @app.get("/")
 def root():
     return {"status": "backend running"}
 
+@app.get("/data")
+def get_data():
+    return DATA
+
 @app.post("/update")
-def update(data: dict):
-    data["timestamp"] = datetime.utcnow().isoformat()
-    data_store.append(data)
+def update(payload: dict):
+    global DATA
 
-    if len(data_store) > 500:
-        data_store.pop(0)
+    if payload["type"] == "prediction":
+        # remove ALL old prediction candles
+        DATA = [d for d in DATA if d.get("type") != "prediction"]
 
+    DATA.extend(payload["candles"])
+
+    # keep last 1000 real candles only
+    real = [d for d in DATA if d["type"] == "real"][-1000:]
+    pred = [d for d in DATA if d["type"] == "prediction"]
+
+    DATA = real + pred
     return {"status": "ok"}
-
-@app.get("/history")
-def history():
-    return data_store
