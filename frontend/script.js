@@ -1,4 +1,4 @@
-const API = "https://YOUR-BACKEND.onrender.com/latest";
+const API = "https://cryptousd.onrender.com";
 
 let prices = [];
 let preds = [];
