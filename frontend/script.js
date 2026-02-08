@@ -1,18 +1,12 @@
-const API = "https://cryptousd.onrender.com";
+const API = "https://cryptousd.onrender.com/history";
 
-let prices = [];
-let preds = [];
-let times = [];
-
-async function loadData() {
+async function loadChart() {
   const res = await fetch(API);
   const data = await res.json();
 
-  if (!data.price) return;
-
-  prices.push(data.price);
-  preds.push(data.prediction);
-  times.push(data.time);
+  const times = data.map(d => d.time);
+  const prices = data.map(d => d.price);
+  const preds = data.map(d => d.prediction);
 
   Plotly.newPlot("chart", [
     { x: times, y: prices, mode: "lines", name: "Price" },
@@ -20,5 +14,5 @@ async function loadData() {
   ]);
 }
 
-setInterval(loadData, 60000);
-loadData();
+setInterval(loadChart, 60000);
+loadChart();
