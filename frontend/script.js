@@ -1,44 +1,48 @@
 const API = "https://cryptousd.onrender.com/data";
 
 async function loadChart() {
-  const res = await fetch(API);
-  const data = await res.json();
-  if (!data || data.length === 0) return;
+    const res = await fetch(API);
+    const data = await res.json();
+    if (!data || data.length === 0) return;
 
-  const real = data.filter(d => d.type === "real");
-  const pred = data.filter(d => d.type === "prediction");
+    const t = data.map(d => d.time);
+    const o = data.map(d => d.open);
+    const h = data.map(d => d.high);
+    const l = data.map(d => d.low);
+    const c = data.map(d => d.close);
+    const types = data.map(d => d.type);
+    const signals = data.map(d => d.signal);
 
-  Plotly.newPlot("chart", [
-    {
-      type: "candlestick",
-      name: "Live Market",
-      x: real.map(d => d.time),
-      open: real.map(d => d.open),
-      high: real.map(d => d.high),
-      low: real.map(d => d.low),
-      close: real.map(d => d.close),
-      increasing: { line: { color: "lime" } },
-      decreasing: { line: { color: "red" } }
-    },
-    {
-      type: "candlestick",
-      name: "AI Forecast (Next 10 min)",
-      x: pred.map(d => d.time),
-      open: pred.map(d => d.open),
-      high: pred.map(d => d.high),
-      low: pred.map(d => d.low),
-      close: pred.map(d => d.close),
-      increasing: { line: { color: "orange" } },
-      decreasing: { line: { color: "olive" } }
-    }
-  ], {
-    paper_bgcolor: "black",
-    plot_bgcolor: "black",
-    xaxis: { rangeslider: { visible: false }, color: "white" },
-    yaxis: { color: "white" },
-    title: "BTCUSD — Live + Rolling 10-Minute AI Forecast"
-  });
+    // Colors: Real = green/red, Prediction = orange/olive
+    const colors = data.map((d, i) => {
+        if (types[i] === "real") return signals[i] === "BUY" ? "green" : "red";
+        else return signals[i] === "BUY" ? "orange" : "olive";
+    });
+
+    const trace = {
+        type: "candlestick",
+        x: t,
+        open: o,
+        high: h,
+        low: l,
+        close: c,
+        increasing: { line: { color: "green" } },
+        decreasing: { line: { color: "red" } },
+        name: "BTCUSD",
+        showlegend: false
+    };
+
+    const layout = {
+        plot_bgcolor: "#0a0a0a",
+        paper_bgcolor: "#0a0a0a",
+        xaxis: { rangeslider: { visible: false }, color: "#fff" },
+        yaxis: { color: "#fff", title: "Price" },
+        font: { color: "#fff" },
+        title: { text: "BTCUSD Live + 10-min Prediction", font: { color: "#fff", size: 20 } }
+    };
+
+    Plotly.newPlot("chart", [trace]);
 }
 
-loadChart();
 setInterval(loadChart, 60000);
+loadChart();
