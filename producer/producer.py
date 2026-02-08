@@ -13,9 +13,10 @@ import ta
 SYMBOL = "BTCUSD"
 TIMEFRAME = mt5.TIMEFRAME_M1
 LOOKBACK = 60
+FUTURE_MINUTES = 10
 BACKEND_URL = "https://cryptousd.onrender.com/update"
 
-# ================= MT5 INIT =================
+# ================= MT5 ======================
 if not mt5.initialize():
     raise RuntimeError("MT5 init failed")
 
@@ -33,31 +34,32 @@ def build_model(n_features):
 model = None
 scaler = MinMaxScaler()
 
-# ================= CORE FUNCTION =================
-def get_payload():
-    global model
-
+# ================= LOOP =====================
+while True:
     rates = mt5.copy_rates_from_pos(SYMBOL, TIMEFRAME, 0, 500)
     df = pd.DataFrame(rates)
     df["time"] = pd.to_datetime(df["time"], unit="s")
 
-    # Indicators
+    # ===== INDICATORS =====
     df["EMA20"] = df["close"].ewm(span=20).mean()
     df["SMA50"] = df["close"].rolling(50).mean()
     df["RSI"] = ta.momentum.RSIIndicator(df["close"]).rsi()
+
     macd = ta.trend.MACD(df["close"])
     df["MACD"] = macd.macd()
     df["MACD_SIGNAL"] = macd.macd_signal()
 
+    df["VWAP"] = (df["close"] * df["tick_volume"]).cumsum() / df["tick_volume"].cumsum()
+
     df.dropna(inplace=True)
 
-    features = ["close", "EMA20", "SMA50", "RSI", "MACD", "MACD_SIGNAL"]
-    data = scaler.fit_transform(df[features])
+    features = ["close", "EMA20", "SMA50", "RSI", "MACD", "MACD_SIGNAL", "VWAP"]
+    scaled = scaler.fit_transform(df[features])
 
     X, y = [], []
-    for i in range(LOOKBACK, len(data)):
-        X.append(data[i-LOOKBACK:i])
-        y.append(data[i, 0])
+    for i in range(LOOKBACK, len(scaled)):
+        X.append(scaled[i-LOOKBACK:i])
+        y.append(scaled[i, 0])
 
     X, y = np.array(X), np.array(y)
 
@@ -65,6 +67,7 @@ def get_payload():
         model = build_model(len(features))
         model.fit(X, y, epochs=5, batch_size=32, verbose=0)
 
+    # ===== 10-MIN FUTURE PREDICTION =====
     last_seq = X[-1].reshape(1, LOOKBACK, len(features))
     pred_scaled = model.predict(last_seq, verbose=0)[0][0]
 
@@ -74,25 +77,44 @@ def get_payload():
 
     last = df.iloc[-1]
 
-    signal = "HOLD"
-    if last["EMA20"] > last["SMA50"]:
-        signal = "BUY"
-    elif last["EMA20"] < last["SMA50"]:
-        signal = "SELL"
+    # ===== MULTI-INDICATOR VOTING =====
+    votes = []
 
-    return {
-        "time": last["time"].isoformat(),
-        "open": float(last["open"]),
-        "high": float(last["high"]),
-        "low": float(last["low"]),
-        "close": float(last["close"]),
-        "prediction": round(float(pred_price), 2),
+    # EMA / SMA
+    votes.append("BUY" if last["EMA20"] > last["SMA50"] else "SELL")
+
+    # RSI
+    if last["RSI"] < 30:
+        votes.append("BUY")
+    elif last["RSI"] > 70:
+        votes.append("SELL")
+
+    # MACD crossover
+    if last["MACD"] > last["MACD_SIGNAL"]:
+        votes.append("BUY")
+    else:
+        votes.append("SELL")
+
+    signal = max(set(votes), key=votes.count)
+
+    payload = {
+        "time": (last["time"] + timedelta(minutes=FUTURE_MINUTES)).isoformat(),
+        "open": float(last["close"]),
+        "high": float(max(last["close"], pred_price)),
+        "low": float(min(last["close"], pred_price)),
+        "close": float(pred_price),
+
+        "ema20": float(last["EMA20"]),
+        "sma50": float(last["SMA50"]),
+        "vwap": float(last["VWAP"]),
+        "rsi": float(last["RSI"]),
+        "macd": float(last["MACD"]),
+        "macd_signal": float(last["MACD_SIGNAL"]),
+
         "signal": signal
     }
 
-# ================= LOOP =================
-while True:
-    payload = get_payload()
     requests.post(BACKEND_URL, json=payload, timeout=5)
     print("Sent:", payload)
+
     time.sleep(60)
