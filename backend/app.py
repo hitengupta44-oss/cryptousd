@@ -11,23 +11,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# in-memory store (simple + safe)
-latest_data = {
-    "time": None,
-    "price": None,
-    "prediction": None
-}
-
-@app.get("/")
-def root():
-    return {"status": "Backend running"}
+data_store = []
 
 @app.post("/update")
 def update(data: dict):
-    global latest_data
-    latest_data = data
+    data_store.append(data)
+    if len(data_store) > 500:
+        data_store.pop(0)
     return {"status": "updated"}
 
-@app.get("/latest")
-def latest():
-    return latest_data
+@app.get("/history")
+def history():
+    return data_store
+
