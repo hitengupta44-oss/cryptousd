@@ -13,6 +13,10 @@ app.add_middleware(
 
 data_store = []
 
+@app.get("/")
+def root():
+    return {"status": "backend running"}
+
 @app.post("/update")
 def update(data: dict):
     data["timestamp"] = datetime.utcnow().isoformat()
