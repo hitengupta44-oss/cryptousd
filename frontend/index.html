@@ -1,34 +1,63 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Crypto ML Dashboard</title>
+  <title>BTCUSD Live AI Chart</title>
   <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
-  <style>
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: #0e1117;
-      color: #ffffff;
-    }
-    header {
-      padding: 15px;
-      background: #161b22;
-      text-align: center;
-      font-size: 20px;
-    }
-    #chart {
-      height: 90vh;
-    }
-  </style>
 </head>
-
 <body>
-  <header>
-    BTCUSD Live Trading Dashboard (MT5 + LSTM)
-  </header>
+<h2>BTCUSD – Live + 10-Min AI Prediction</h2>
+<div id="chart" style="height:90vh;"></div>
 
-  <div id="chart"></div>
+<script>
+const API = "https://cryptousd.onrender.com/history";
 
-  <script src="script.js"></script>
+async function loadData() {
+  const res = await fetch(API);
+  const data = await res.json();
+
+  const t = data.map(d => d.time);
+  const open = data.map(d => d.open);
+  const high = data.map(d => d.high);
+  const low = data.map(d => d.low);
+  const close = data.map(d => d.close);
+
+  const ema = data.map(d => d.ema20);
+  const sma = data.map(d => d.sma50);
+  const vwap = data.map(d => d.vwap);
+
+  const buys = data.filter(d => d.signal === "BUY");
+  const sells = data.filter(d => d.signal === "SELL");
+
+  const traces = [
+    {
+      x: t, open, high, low, close,
+      type: "candlestick",
+      name: "Price"
+    },
+    { x: t, y: ema, type: "scatter", name: "EMA20" },
+    { x: t, y: sma, type: "scatter", name: "SMA50" },
+    { x: t, y: vwap, type: "scatter", name: "VWAP" },
+    {
+      x: buys.map(d => d.time),
+      y: buys.map(d => d.close),
+      mode: "markers",
+      name: "BUY",
+      marker: { color: "green", size: 10 }
+    },
+    {
+      x: sells.map(d => d.time),
+      y: sells.map(d => d.close),
+      mode: "markers",
+      name: "SELL",
+      marker: { color: "red", size: 10 }
+    }
+  ];
+
+  Plotly.newPlot("chart", traces, { xaxis: { rangeslider: { visible: false } }});
+}
+
+loadData();
+setInterval(loadData, 60000);
+</script>
 </body>
 </html>
