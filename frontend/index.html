@@ -1,63 +1,60 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>BTCUSD Live AI Chart</title>
-  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <meta charset="UTF-8" />
+    <title>BTCUSD — Live AI Prediction Dashboard</title>
+
+    <!-- Plotly -->
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+
+    <!-- Styling -->
+    <style>
+        body {
+            margin: 0;
+            background-color: #000;
+            color: #fff;
+            font-family: Arial, sans-serif;
+        }
+
+        header {
+            text-align: center;
+            padding: 12px;
+            font-size: 20px;
+            font-weight: bold;
+            background: #111;
+            border-bottom: 1px solid #333;
+        }
+
+        #chart {
+            width: 100vw;
+            height: calc(100vh - 60px);
+        }
+
+        footer {
+            text-align: center;
+            padding: 6px;
+            font-size: 12px;
+            color: #aaa;
+            background: #111;
+            border-top: 1px solid #333;
+        }
+    </style>
 </head>
+
 <body>
-<h2>BTCUSD – Live + 10-Min AI Prediction</h2>
-<div id="chart" style="height:90vh;"></div>
 
-<script>
-const API = "https://cryptousd.onrender.com/history";
+    <header>
+        BTCUSD — Live Market + 10-Minute AI Forecast
+    </header>
 
-async function loadData() {
-  const res = await fetch(API);
-  const data = await res.json();
+    <div id="chart"></div>
 
-  const t = data.map(d => d.time);
-  const open = data.map(d => d.open);
-  const high = data.map(d => d.high);
-  const low = data.map(d => d.low);
-  const close = data.map(d => d.close);
+    <footer>
+        Green/Red = Live Market | Orange/Olive = AI Prediction (Next 10 Minutes)
+    </footer>
 
-  const ema = data.map(d => d.ema20);
-  const sma = data.map(d => d.sma50);
-  const vwap = data.map(d => d.vwap);
+    <!-- App Logic -->
+    <script src="script.js"></script>
 
-  const buys = data.filter(d => d.signal === "BUY");
-  const sells = data.filter(d => d.signal === "SELL");
-
-  const traces = [
-    {
-      x: t, open, high, low, close,
-      type: "candlestick",
-      name: "Price"
-    },
-    { x: t, y: ema, type: "scatter", name: "EMA20" },
-    { x: t, y: sma, type: "scatter", name: "SMA50" },
-    { x: t, y: vwap, type: "scatter", name: "VWAP" },
-    {
-      x: buys.map(d => d.time),
-      y: buys.map(d => d.close),
-      mode: "markers",
-      name: "BUY",
-      marker: { color: "green", size: 10 }
-    },
-    {
-      x: sells.map(d => d.time),
-      y: sells.map(d => d.close),
-      mode: "markers",
-      name: "SELL",
-      marker: { color: "red", size: 10 }
-    }
-  ];
-
-  Plotly.newPlot("chart", traces, { xaxis: { rangeslider: { visible: false } }});
-}
-
-loadData();
-setInterval(loadData, 60000);
-</script>
 </body>
 </html>

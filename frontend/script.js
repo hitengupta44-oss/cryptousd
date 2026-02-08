@@ -1,55 +1,44 @@
-const API = "https://cryptousd.onrender.com/history";
+const API = "https://cryptousd.onrender.com/data";
 
 async function loadChart() {
   const res = await fetch(API);
   const data = await res.json();
-  if (data.length === 0) return;
+  if (!data || data.length === 0) return;
 
-  const t = data.map(d => d.time);
-  const o = data.map(d => d.open);
-  const h = data.map(d => d.high);
-  const l = data.map(d => d.low);
-  const c = data.map(d => d.close);
-  const p = data.map(d => d.prediction);
-
-  const buys = data.filter(d => d.signal === "BUY");
-  const sells = data.filter(d => d.signal === "SELL");
+  const real = data.filter(d => d.type === "real");
+  const pred = data.filter(d => d.type === "prediction");
 
   Plotly.newPlot("chart", [
     {
       type: "candlestick",
-      x: t, open: o, high: h, low: l, close: c,
-      name: "BTC Price"
+      name: "Live Market",
+      x: real.map(d => d.time),
+      open: real.map(d => d.open),
+      high: real.map(d => d.high),
+      low: real.map(d => d.low),
+      close: real.map(d => d.close),
+      increasing: { line: { color: "lime" } },
+      decreasing: { line: { color: "red" } }
     },
     {
-      type: "scatter",
-      x: t, y: p,
-      mode: "lines",
-      name: "Prediction",
-      line: { color: "orange" }
-    },
-    {
-      type: "scatter",
-      mode: "markers",
-      name: "BUY",
-      x: buys.map(d => d.time),
-      y: buys.map(d => d.close),
-      marker: { color: "green", symbol: "triangle-up", size: 12 }
-    },
-    {
-      type: "scatter",
-      mode: "markers",
-      name: "SELL",
-      x: sells.map(d => d.time),
-      y: sells.map(d => d.close),
-      marker: { color: "red", symbol: "triangle-down", size: 12 }
+      type: "candlestick",
+      name: "AI Forecast (Next 10 min)",
+      x: pred.map(d => d.time),
+      open: pred.map(d => d.open),
+      high: pred.map(d => d.high),
+      low: pred.map(d => d.low),
+      close: pred.map(d => d.close),
+      increasing: { line: { color: "orange" } },
+      decreasing: { line: { color: "olive" } }
     }
   ], {
-    xaxis: { rangeslider: { visible: false } },
-    yaxis: { title: "Price" },
-    title: "BTCUSD — Live ML Prediction Dashboard"
+    paper_bgcolor: "black",
+    plot_bgcolor: "black",
+    xaxis: { rangeslider: { visible: false }, color: "white" },
+    yaxis: { color: "white" },
+    title: "BTCUSD — Live + Rolling 10-Minute AI Forecast"
   });
 }
 
-setInterval(loadChart, 60000);
 loadChart();
+setInterval(loadChart, 60000);
