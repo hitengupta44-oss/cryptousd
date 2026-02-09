@@ -5,26 +5,25 @@ async function loadChart() {
     let data = await res.json();
     if (!data || data.length === 0) return;
 
-    // ===== Last 60 real + latest 10 predictions =====
+    // ===== Separate data =====
     const real = data.filter(d => d.type === "real").slice(-60);
     const future = data.filter(d => d.type === "prediction").slice(-10);
     const combined = [...real, ...future];
 
-    const times = combined.map(d => d.time);
-
+    // ===== Candlestick =====
     const candleTrace = {
         type: "candlestick",
-        x: times,
+        x: combined.map(d => d.time),
         open: combined.map(d => d.open),
         high: combined.map(d => d.high),
         low: combined.map(d => d.low),
         close: combined.map(d => d.close),
-        increasing: { line: { color: "green" } },
-        decreasing: { line: { color: "red" } },
-        name: "BTCUSD"
+        increasing: { line: { color: "#26a69a" } },
+        decreasing: { line: { color: "#ef5350" } },
+        name: "Price"
     };
 
-    // ===== Indicators (real only) =====
+    // ===== Indicators (REAL ONLY) =====
     const emaTrace = {
         x: real.map(d => d.time),
         y: real.map(d => d.ema20),
@@ -61,7 +60,7 @@ async function loadChart() {
         y: buy.map(d => d.low),
         mode: "markers",
         type: "scatter",
-        marker: { color: "lime", size: 9, symbol: "triangle-up" },
+        marker: { color: "lime", size: 8, symbol: "triangle-up" },
         name: "BUY"
     };
 
@@ -70,7 +69,7 @@ async function loadChart() {
         y: sell.map(d => d.high),
         mode: "markers",
         type: "scatter",
-        marker: { color: "red", size: 9, symbol: "triangle-down" },
+        marker: { color: "red", size: 8, symbol: "triangle-down" },
         name: "SELL"
     };
 
@@ -86,12 +85,13 @@ async function loadChart() {
         yaxis: "y2"
     };
 
+    // ===== Layout =====
     const layout = {
         paper_bgcolor: "#000",
         plot_bgcolor: "#000",
         font: { color: "#ccc" },
 
-        margin: { t: 30, b: 20, l: 50, r: 20 },
+        margin: { t: 20, b: 20, l: 50, r: 20 },
 
         xaxis: {
             rangeslider: { visible: false },
@@ -110,18 +110,13 @@ async function loadChart() {
 
         yaxis2: {
             domain: [0, 0.25],
-            title: "RSI",
-            range: [0, 100]
+            range: [0, 100],
+            title: "RSI"
         },
 
         legend: {
             orientation: "h",
             y: 1.02
-        },
-
-        title: {
-            text: "BTCUSD — AI Professional Dashboard",
-            font: { size: 18 }
         }
     };
 
@@ -141,5 +136,6 @@ async function loadChart() {
     );
 }
 
+// Refresh every minute
 setInterval(loadChart, 60000);
 loadChart();

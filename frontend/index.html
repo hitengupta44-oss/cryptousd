@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
 <meta charset="UTF-8">
-<title>BTCUSD AI Dashboard</title>
+<title>BTCUSD AI Terminal</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
@@ -28,7 +28,11 @@ body {
     font-weight: 600;
 }
 
-.status {
+.logo {
+    font-size: 18px;
+}
+
+.live {
     color: #4caf50;
     font-size: 13px;
 }
@@ -38,30 +42,17 @@ body {
     width: 100%;
     height: calc(100vh - 50px);
 }
-
-/* Footer info */
-.footer {
-    position: absolute;
-    bottom: 5px;
-    right: 15px;
-    font-size: 11px;
-    color: #555;
-}
 </style>
 </head>
 
 <body>
 
 <div class="header">
-    <div>BTCUSD — AI Live (60m + 10m Forecast)</div>
-    <div class="status">● LIVE</div>
+    <div class="logo">BTCUSD — AI Trading Terminal</div>
+    <div class="live">● LIVE</div>
 </div>
 
 <div id="chart"></div>
-
-<div class="footer">
-    EMA20 | SMA50 | VWAP | RSI | LSTM Prediction
-</div>
 
 <script src="script.js"></script>
 
