@@ -1,13 +1,16 @@
 # ================= IMPORTS =================
+import os
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
+
 import MetaTrader5 as mt5
 import pandas as pd
 import numpy as np
 import requests
 import time
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from sklearn.preprocessing import MinMaxScaler
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import LSTM, Dense, Dropout
+from tensorflow.keras.layers import LSTM, Dense, Dropout, Input
 import ta
 
 # ================= SETTINGS =================
@@ -27,7 +30,8 @@ if not mt5.initialize():
 # ================= MODEL =================
 def build_model(n_features):
     model = Sequential([
-        LSTM(64, return_sequences=True, input_shape=(LOOKBACK, n_features)),
+        Input(shape=(LOOKBACK, n_features)),
+        LSTM(64, return_sequences=True),
         Dropout(0.2),
         LSTM(32),
         Dense(16, activation="relu"),
@@ -59,24 +63,26 @@ FEATURES = ["close", "EMA20", "SMA50", "RSI", "MACD", "MACD_SIGNAL", "VWAP"]
 # ================= MAIN LOOP =================
 while True:
     try:
-        # -------- Fetch latest data --------
+        # -------- Fetch data --------
         rates = mt5.copy_rates_from_pos(SYMBOL, TIMEFRAME, 0, ROLLING_CANDLES)
         df = pd.DataFrame(rates)
         df["time"] = pd.to_datetime(df["time"], unit="s")
 
         df = add_indicators(df)
 
-        # -------- Prepare ML data --------
+        # -------- Prepare ML --------
         data = scaler.fit_transform(df[FEATURES])
 
         X, y = [], []
         for i in range(LOOKBACK, len(data)):
             X.append(data[i-LOOKBACK:i])
             y.append(data[i, 0])
+
         X, y = np.array(X), np.array(y)
 
-        # -------- Live Retraining --------
-        now = datetime.utcnow()
+        # -------- Live retraining --------
+        now = datetime.now(timezone.utc)
+
         if (model is None or last_train_time is None or
             (now - last_train_time).seconds >= RETRAIN_INTERVAL * 60):
 
@@ -86,15 +92,14 @@ while True:
             last_train_time = now
             print("Model updated at", now)
 
-        # -------- Last sequence --------
+        # -------- Prediction --------
         last_seq = X[-1]
         temp_df = df.copy()
         last_time = temp_df.iloc[-1]["time"]
 
         predictions = []
 
-        # -------- Multi-step prediction with indicator recalculation --------
-        for _ in range(PRED_MINUTES):
+        for i in range(PRED_MINUTES):
             pred_scaled = model.predict(
                 last_seq.reshape(1, LOOKBACK, len(FEATURES)),
                 verbose=0
@@ -106,8 +111,10 @@ while True:
 
             prev_close = temp_df.iloc[-1]["close"]
 
+            future_time = last_time + timedelta(minutes=i+1)
+
             new_row = {
-                "time": temp_df.iloc[-1]["time"] + timedelta(minutes=1),
+                "time": future_time,
                 "open": prev_close,
                 "high": max(prev_close, pred_price),
                 "low": min(prev_close, pred_price),
@@ -118,12 +125,12 @@ while True:
             temp_df = pd.concat([temp_df, pd.DataFrame([new_row])], ignore_index=True)
             temp_df = add_indicators(temp_df)
 
-            latest_features = temp_df[FEATURES].tail(LOOKBACK).values
+            latest_features = temp_df[FEATURES].tail(LOOKBACK)
             last_seq = scaler.transform(latest_features)
 
             predictions.append(temp_df.iloc[-1])
 
-        # -------- Send REAL candle --------
+        # -------- Send REAL --------
         last = df.iloc[-1]
 
         real_payload = {
