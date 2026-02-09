@@ -1,30 +1,39 @@
-# app.py
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from datetime import datetime
 
 app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allow all for testing; restrict in production
+    allow_origins=["*"],
     allow_methods=["*"],
     allow_headers=["*"]
 )
 
 DATA = []
+MAX_RECORDS = 2000
+
 
 @app.post("/update")
 def update(payload: dict):
-    # Ensure each candle has type
+    global DATA
+
+    # Ensure type exists
     if "type" not in payload:
         payload["type"] = "unknown"
+
+    # If a real candle comes → remove old predictions
+    if payload["type"] == "real":
+        DATA = [d for d in DATA if d.get("type") != "prediction"]
+
     DATA.append(payload)
 
-    # Keep last 2000 candles
-    if len(DATA) > 2000:
-        DATA.pop(0)
+    # Keep only last N records
+    if len(DATA) > MAX_RECORDS:
+        DATA = DATA[-MAX_RECORDS:]
+
     return {"status": "ok"}
+
 
 @app.get("/data")
 def get_data():
