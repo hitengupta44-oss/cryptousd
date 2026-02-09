@@ -1,4 +1,4 @@
-const API = "https://cryptousd.onrender.com/data";
+const API = "https://cryptousdlive-1.onrender.com/data";
 
 async function loadChart() {
     const res = await fetch(API);
