@@ -14,6 +14,11 @@ DATA = []
 MAX_RECORDS = 2000
 
 
+@app.get("/")
+def home():
+    return {"status": "running"}
+
+
 @app.post("/update")
 def update(payload: dict):
     global DATA
@@ -22,13 +27,13 @@ def update(payload: dict):
     if "type" not in payload:
         payload["type"] = "unknown"
 
-    # If a real candle comes → remove old predictions
+    # When a real candle arrives → remove old predictions
     if payload["type"] == "real":
         DATA = [d for d in DATA if d.get("type") != "prediction"]
 
     DATA.append(payload)
 
-    # Keep only last N records
+    # Keep only last records
     if len(DATA) > MAX_RECORDS:
         DATA = DATA[-MAX_RECORDS:]
 
