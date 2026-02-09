@@ -19,7 +19,7 @@ TIMEFRAME = mt5.TIMEFRAME_M1
 LOOKBACK = 60
 PRED_MINUTES = 10
 ROLLING_CANDLES = 600
-BACKEND_URL = "https://cryptousd.onrender.com/update"
+BACKEND_URL = "https://cryptousdlive-1.onrender.com/update"
 
 RETRAIN_INTERVAL = 30  # minutes
 
