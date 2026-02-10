@@ -1,70 +1,141 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>BTCUSD AI Terminal</title>
+<meta charset="UTF-8">
+<title>BTCUSD AI Trading Terminal</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+
 <style>
-body {margin:0;background:#000;color:#ccc;font-family:Arial;}
+body {
+    margin: 0;
+    background: #000;
+    font-family: Arial, sans-serif;
+    color: #ccc;
+}
 
-.container {display:flex;height:100vh;}
+/* Layout */
+.container {
+    display: flex;
+    height: 100vh;
+}
 
+/* Left Panel */
 .sidebar {
-width:220px;
-background:#0b0b0b;
-padding:15px;
-border-right:1px solid #222;
+    width: 260px;
+    background: #0b0b0b;
+    border-right: 1px solid #1f1f1f;
+    padding: 15px;
+    font-size: 13px;
 }
 
-.chart-area {flex:1;}
+.sidebar h3 {
+    color: #fff;
+    margin-top: 0;
+}
 
-.legend-item {margin:8px 0;}
+.legend-item {
+    margin: 6px 0;
+}
+
 .color-box {
-display:inline-block;
-width:12px;
-height:12px;
-margin-right:8px;
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    margin-right: 8px;
 }
 
-#chart {height:100%;}
+/* Main Area */
+.main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Header */
+.header {
+    height: 50px;
+    background: #0b0b0b;
+    border-bottom: 1px solid #1f1f1f;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 20px;
+    font-weight: bold;
+}
+
+.live {
+    color: #4caf50;
+}
+
+/* Chart */
+#chart {
+    width: 100%;
+    height: calc(100vh - 50px);
+}
 </style>
 </head>
+
 <body>
 
 <div class="container">
-<div class="sidebar">
-<h3>Indicators</h3>
 
-<div class="legend-item">
-<span class="color-box" style="background:#00e5ff"></span> EMA20
-</div>
+    <!-- LEFT PANEL -->
+    <div class="sidebar">
+        <h3>Indicator Guide</h3>
 
-<div class="legend-item">
-<span class="color-box" style="background:#ffd700"></span> SMA50
-</div>
+        <div class="legend-item">
+            <span class="color-box" style="background:#26a69a"></span>
+            Bullish Candle
+        </div>
+        <div class="legend-item">
+            <span class="color-box" style="background:#ef5350"></span>
+            Bearish Candle
+        </div>
+        <div class="legend-item">
+            <span class="color-box" style="background:orange"></span>
+            Future Prediction
+        </div>
 
-<div class="legend-item">
-<span class="color-box" style="background:#b388ff"></span> VWAP
-</div>
+        <hr>
 
-<div class="legend-item">
-<span class="color-box" style="background:orange"></span> Prediction Up
-</div>
+        <div class="legend-item">
+            <span class="color-box" style="background:#00e5ff"></span>
+            EMA20
+        </div>
+        <div class="legend-item">
+            <span class="color-box" style="background:#ffd700"></span>
+            SMA50
+        </div>
+        <div class="legend-item">
+            <span class="color-box" style="background:#b388ff"></span>
+            VWAP
+        </div>
 
-<div class="legend-item">
-<span class="color-box" style="background:olive"></span> Prediction Down
-</div>
+        <hr>
 
-<p>Green/Red = Real Candles</p>
-<p>RSI below</p>
+        <p>
+        • Model trains on last 24h<br>
+        • Shows last 60 minutes<br>
+        • Predicts next 10 minutes<br>
+        • Updates every minute
+        </p>
+    </div>
 
-</div>
+    <!-- MAIN -->
+    <div class="main">
+        <div class="header">
+            BTCUSD — AI Trading Terminal
+            <span class="live">● LIVE</span>
+        </div>
 
-<div class="chart-area">
-<div id="chart"></div>
-</div>
+        <div id="chart"></div>
+    </div>
 
 </div>
 
 <script src="script.js"></script>
+
 </body>
 </html>

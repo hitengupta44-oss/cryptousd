@@ -2,71 +2,109 @@ const API = "https://cryptousdlive-1.onrender.com/data";
 
 async function loadChart() {
     const res = await fetch(API);
-    const data = await res.json();
-    if (!data.length) return;
+    let data = await res.json();
+    if (!data || data.length === 0) return;
 
-    const real = data.filter(d => d.type==="real").slice(-60);
-    const future = data.filter(d => d.type==="prediction").slice(-10);
+    // Separate real and prediction
+    const real = data.filter(d => d.type === "real").slice(-60);
+    const pred = data.filter(d => d.type === "prediction").slice(-10);
 
-    const all = [...real, ...future];
-
-    const candle = {
+    // ================= Candles =================
+    const realCandle = {
         type: "candlestick",
-        x: all.map(d=>d.time),
-        open: all.map(d=>d.open),
-        high: all.map(d=>d.high),
-        low: all.map(d=>d.low),
-        close: all.map(d=>d.close),
-        increasing:{line:{color:"#26a69a"}},
-        decreasing:{line:{color:"#ef5350"}}
+        x: real.map(d => d.time),
+        open: real.map(d => d.open),
+        high: real.map(d => d.high),
+        low: real.map(d => d.low),
+        close: real.map(d => d.close),
+        increasing: { line: { color: "#26a69a" } },
+        decreasing: { line: { color: "#ef5350" } },
+        name: "Real"
     };
 
+    const predCandle = {
+        type: "candlestick",
+        x: pred.map(d => d.time),
+        open: pred.map(d => d.open),
+        high: pred.map(d => d.high),
+        low: pred.map(d => d.low),
+        close: pred.map(d => d.close),
+        increasing: { line: { color: "orange" } },
+        decreasing: { line: { color: "olive" } },
+        opacity: 0.8,
+        name: "Prediction"
+    };
+
+    // ================= Indicators =================
     const ema = {
-        x: all.map(d=>d.time),
-        y: all.map(d=>d.ema20),
-        type:"scatter",
-        line:{color:"#00e5ff"},
-        name:"EMA"
+        x: real.map(d => d.time),
+        y: real.map(d => d.ema20),
+        type: "scatter",
+        mode: "lines",
+        line: { color: "#00e5ff", width: 2 },
+        name: "EMA20"
     };
 
     const sma = {
-        x: all.map(d=>d.time),
-        y: all.map(d=>d.sma50),
-        type:"scatter",
-        line:{color:"#ffd700"},
-        name:"SMA"
+        x: real.map(d => d.time),
+        y: real.map(d => d.sma50),
+        type: "scatter",
+        mode: "lines",
+        line: { color: "#ffd700", width: 2 },
+        name: "SMA50"
     };
 
     const vwap = {
-        x: all.map(d=>d.time),
-        y: all.map(d=>d.vwap),
-        type:"scatter",
-        line:{color:"#b388ff"},
-        name:"VWAP"
+        x: real.map(d => d.time),
+        y: real.map(d => d.vwap),
+        type: "scatter",
+        mode: "lines",
+        line: { color: "#b388ff", width: 2 },
+        name: "VWAP"
     };
 
+    // ================= RSI Panel =================
     const rsi = {
-        x: real.map(d=>d.time),
-        y: real.map(d=>d.rsi),
-        xaxis:"x2",
-        yaxis:"y2",
-        type:"scatter",
-        line:{color:"orange"},
-        name:"RSI"
+        x: real.map(d => d.time),
+        y: real.map(d => d.rsi),
+        type: "scatter",
+        mode: "lines",
+        line: { color: "#ff9800", width: 2 },
+        name: "RSI",
+        xaxis: "x2",
+        yaxis: "y2"
     };
 
+    // ================= Layout =================
     const layout = {
-        paper_bgcolor:"#000",
-        plot_bgcolor:"#000",
-        font:{color:"#ccc"},
-        xaxis:{rangeslider:{visible:false}},
-        yaxis:{domain:[0.3,1]},
-        xaxis2:{anchor:"y2"},
-        yaxis2:{domain:[0,0.25],range:[0,100]}
+        paper_bgcolor: "#000",
+        plot_bgcolor: "#000",
+        font: { color: "#ccc" },
+
+        margin: { t: 20, b: 30, l: 50, r: 20 },
+
+        xaxis: { rangeslider: { visible: false } },
+        yaxis: { domain: [0.3, 1], title: "Price" },
+
+        xaxis2: { anchor: "y2" },
+        yaxis2: {
+            domain: [0, 0.25],
+            range: [0, 100],
+            title: "RSI"
+        },
+
+        showlegend: true,
+        legend: { orientation: "h", y: 1.02 }
     };
 
-    Plotly.newPlot("chart",[candle,ema,sma,vwap,rsi],layout);
+    Plotly.newPlot(
+        "chart",
+        [realCandle, predCandle, ema, sma, vwap, rsi],
+        layout,
+        { responsive: true }
+    );
 }
 
-setInterval(loadChart,60000);
+// Refresh every minute
+setInterval(loadChart, 60000);
 loadChart();
