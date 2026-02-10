@@ -11,7 +11,7 @@ app.add_middleware(
 )
 
 DATA = []
-MAX_RECORDS = 2000
+MAX_REAL = 120  # keep history
 
 
 @app.get("/")
@@ -23,15 +23,22 @@ def home():
 def update(payload: dict):
     global DATA
 
-    # Remove old predictions when new real candle arrives
-    if payload.get("type") == "real":
+    payload_type = payload.get("type", "unknown")
+
+    # If real candle arrives → remove old predictions only
+    if payload_type == "real":
         DATA = [d for d in DATA if d.get("type") != "prediction"]
 
     DATA.append(payload)
 
-    # Keep memory limited
-    if len(DATA) > MAX_RECORDS:
-        DATA = DATA[-MAX_RECORDS:]
+    # Keep only last real candles
+    real = [d for d in DATA if d.get("type") == "real"]
+    pred = [d for d in DATA if d.get("type") == "prediction"]
+
+    if len(real) > MAX_REAL:
+        real = real[-MAX_REAL:]
+
+    DATA = real + pred
 
     return {"status": "ok"}
 
