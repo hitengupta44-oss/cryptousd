@@ -1,4 +1,5 @@
-# ================= IMPORTS =================
+# ================= FINAL PRODUCTION PRODUCER =================
+
 import os
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 
@@ -20,7 +21,6 @@ LOOKBACK = 60
 PRED_MINUTES = 10
 ROLLING_CANDLES = 600
 BACKEND_URL = "https://cryptousdlive-1.onrender.com/update"
-
 RETRAIN_INTERVAL = 30  # minutes
 
 # ================= MT5 =================
@@ -43,6 +43,7 @@ def build_model(n_features):
 model = None
 scaler = MinMaxScaler()
 last_train_time = None
+last_processed_time = None
 
 # ================= INDICATORS =================
 def add_indicators(df):
@@ -60,43 +61,59 @@ def add_indicators(df):
 
 FEATURES = ["close", "EMA20", "SMA50", "RSI", "MACD", "MACD_SIGNAL", "VWAP"]
 
+print("Producer started... Waiting for new candles")
+
 # ================= MAIN LOOP =================
 while True:
     try:
-        # -------- Fetch data --------
-        rates = mt5.copy_rates_from_pos(SYMBOL, TIMEFRAME, 0, ROLLING_CANDLES)
+        # ---- Get last CLOSED candles (skip forming candle) ----
+        rates = mt5.copy_rates_from_pos(SYMBOL, TIMEFRAME, 1, ROLLING_CANDLES)
         df = pd.DataFrame(rates)
         df["time"] = pd.to_datetime(df["time"], unit="s")
 
+        current_time = df.iloc[-1]["time"]
+
+        # ---- Wait until a NEW candle arrives ----
+        if last_processed_time == current_time:
+            time.sleep(2)
+            continue
+
+        last_processed_time = current_time
+        print("New candle:", current_time)
+
+        # ================= DATA PROCESSING =================
         df = add_indicators(df)
 
-        # -------- Prepare ML --------
-        data = scaler.fit_transform(df[FEATURES])
+        volatility = df["close"].pct_change().std()
+
+        scaled = scaler.fit_transform(df[FEATURES])
 
         X, y = [], []
-        for i in range(LOOKBACK, len(data)):
-            X.append(data[i-LOOKBACK:i])
-            y.append(data[i, 0])
+        for i in range(LOOKBACK, len(scaled)):
+            X.append(scaled[i-LOOKBACK:i])
+            y.append(scaled[i, 0])
 
         X, y = np.array(X), np.array(y)
 
-        # -------- Live retraining --------
-        now = datetime.now(timezone.utc)
-
-        if (model is None or last_train_time is None or
-            (now - last_train_time).seconds >= RETRAIN_INTERVAL * 60):
-
-            print("Retraining model...")
+        # ---- Build model first time ----
+        if model is None:
+            print("Building model...")
             model = build_model(len(FEATURES))
-            model.fit(X, y, epochs=5, batch_size=32, verbose=0)
+
+        # ---- Live retraining ----
+        now = datetime.now(timezone.utc)
+        if (last_train_time is None or
+            (now - last_train_time).total_seconds() >= RETRAIN_INTERVAL * 60):
+
+            print("Updating model...")
+            model.fit(X, y, epochs=3, batch_size=32, verbose=0)
             last_train_time = now
             print("Model updated at", now)
 
-        # -------- Prediction --------
+        # ================= PREDICTIONS =================
+        base_time = current_time
         last_seq = X[-1]
         temp_df = df.copy()
-        last_time = temp_df.iloc[-1]["time"]
-
         predictions = []
 
         for i in range(PRED_MINUTES):
@@ -109,9 +126,11 @@ while True:
                 np.hstack([[pred_scaled], np.zeros(len(FEATURES)-1)]).reshape(1, -1)
             )[0][0]
 
-            prev_close = temp_df.iloc[-1]["close"]
+            # Add realistic market noise
+            pred_price = pred_price * (1 + np.random.normal(0, volatility))
 
-            future_time = last_time + timedelta(minutes=i+1)
+            prev_close = temp_df.iloc[-1]["close"]
+            future_time = base_time + timedelta(minutes=i+1)
 
             new_row = {
                 "time": future_time,
@@ -130,7 +149,7 @@ while True:
 
             predictions.append(temp_df.iloc[-1])
 
-        # -------- Send REAL --------
+        # ================= SEND REAL =================
         last = df.iloc[-1]
 
         real_payload = {
@@ -149,7 +168,7 @@ while True:
 
         requests.post(BACKEND_URL, json=real_payload)
 
-        # -------- Send predictions --------
+        # ================= SEND PREDICTIONS =================
         prev_close = last["close"]
 
         for row in predictions:
@@ -168,9 +187,9 @@ while True:
             prev_close = row["close"]
             requests.post(BACKEND_URL, json=payload)
 
-        print("Sent real + predictions at", last_time)
+        print("Sent real + predictions at", base_time)
 
     except Exception as e:
         print("Error:", e)
 
-    time.sleep(60)
+    time.sleep(2)
