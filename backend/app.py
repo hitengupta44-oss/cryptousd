@@ -3,21 +3,17 @@ from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 
-# Allow frontend access (Vercel)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
     allow_methods=["*"],
-    allow_headers=["*"],
+    allow_headers=["*"]
 )
 
-# ================= STORAGE =================
 REAL_DATA = []
 PRED_DATA = []
 
 MAX_REAL = 60
-MAX_PRED = 10
 
 
 @app.get("/")
@@ -25,39 +21,40 @@ def home():
     return {"status": "running"}
 
 
-# ================= UPDATE ENDPOINT =================
 @app.post("/update")
 def update(payload: dict):
     global REAL_DATA, PRED_DATA
 
-    data_type = payload.get("type")
+    if "type" not in payload:
+        return {"status": "ignored"}
 
-    if data_type == "real":
-        # Remove old predictions when new real candle comes
-        PRED_DATA = []
+    # ================= REAL CANDLES =================
+    if payload["type"] == "real":
+        # Remove duplicate timestamps
+        REAL_DATA = [d for d in REAL_DATA if d["time"] != payload["time"]]
 
-        # Avoid duplicate real candle
-        if not REAL_DATA or REAL_DATA[-1]["time"] != payload["time"]:
-            REAL_DATA.append(payload)
+        REAL_DATA.append(payload)
 
         # Keep only last 60 real candles
-        if len(REAL_DATA) > MAX_REAL:
-            REAL_DATA = REAL_DATA[-MAX_REAL:]
+        REAL_DATA = sorted(REAL_DATA, key=lambda x: x["time"])[-MAX_REAL:]
 
-    elif data_type == "prediction":
-        # Avoid duplicate prediction timestamps
-        if not PRED_DATA or PRED_DATA[-1]["time"] != payload["time"]:
-            PRED_DATA.append(payload)
+        # When a new real candle arrives → clear old predictions
+        PRED_DATA = []
 
-        # Keep only last 10 predictions
-        if len(PRED_DATA) > MAX_PRED:
-            PRED_DATA = PRED_DATA[-MAX_PRED:]
+    # ================= PREDICTIONS =================
+    elif payload["type"] == "prediction":
+        # Avoid duplicate prediction times
+        PRED_DATA = [d for d in PRED_DATA if d["time"] != payload["time"]]
+        PRED_DATA.append(payload)
+
+        # Keep only next 10
+        PRED_DATA = sorted(PRED_DATA, key=lambda x: x["time"])[:10]
 
     return {"status": "ok"}
 
 
-# ================= DATA ENDPOINT =================
 @app.get("/data")
 def get_data():
-    # Always return real + prediction together
-    return REAL_DATA + PRED_DATA
+    # Return real + predictions combined
+    combined = sorted(REAL_DATA + PRED_DATA, key=lambda x: x["time"])
+    return combined
