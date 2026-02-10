@@ -5,56 +5,42 @@ async function loadChart() {
     const data = await res.json();
     if (!data.length) return;
 
-    const real = data.filter(d => d.type === "real").slice(-60);
-    const future = data.filter(d => d.type === "prediction").slice(-10);
+    const real = data.filter(d => d.type==="real").slice(-60);
+    const future = data.filter(d => d.type==="prediction").slice(-10);
 
-    const realTrace = {
+    const all = [...real, ...future];
+
+    const candle = {
         type: "candlestick",
-        x: real.map(d=>d.time),
-        open: real.map(d=>d.open),
-        high: real.map(d=>d.high),
-        low: real.map(d=>d.low),
-        close: real.map(d=>d.close),
+        x: all.map(d=>d.time),
+        open: all.map(d=>d.open),
+        high: all.map(d=>d.high),
+        low: all.map(d=>d.low),
+        close: all.map(d=>d.close),
         increasing:{line:{color:"#26a69a"}},
-        decreasing:{line:{color:"#ef5350"}},
-        name:"Real"
-    };
-
-    const predTrace = {
-        type: "candlestick",
-        x: future.map(d=>d.time),
-        open: future.map(d=>d.open),
-        high: future.map(d=>d.high),
-        low: future.map(d=>d.low),
-        close: future.map(d=>d.close),
-        increasing:{line:{color:"orange"}},
-        decreasing:{line:{color:"olive"}},
-        name:"Prediction"
+        decreasing:{line:{color:"#ef5350"}}
     };
 
     const ema = {
-        x: real.map(d=>d.time),
-        y: real.map(d=>d.ema20),
+        x: all.map(d=>d.time),
+        y: all.map(d=>d.ema20),
         type:"scatter",
-        mode:"lines",
         line:{color:"#00e5ff"},
-        name:"EMA20"
+        name:"EMA"
     };
 
     const sma = {
-        x: real.map(d=>d.time),
-        y: real.map(d=>d.sma50),
+        x: all.map(d=>d.time),
+        y: all.map(d=>d.sma50),
         type:"scatter",
-        mode:"lines",
         line:{color:"#ffd700"},
-        name:"SMA50"
+        name:"SMA"
     };
 
     const vwap = {
-        x: real.map(d=>d.time),
-        y: real.map(d=>d.vwap),
+        x: all.map(d=>d.time),
+        y: all.map(d=>d.vwap),
         type:"scatter",
-        mode:"lines",
         line:{color:"#b388ff"},
         name:"VWAP"
     };
@@ -62,30 +48,25 @@ async function loadChart() {
     const rsi = {
         x: real.map(d=>d.time),
         y: real.map(d=>d.rsi),
-        type:"scatter",
-        mode:"lines",
         xaxis:"x2",
         yaxis:"y2",
-        line:{color:"#ff9800"},
+        type:"scatter",
+        line:{color:"orange"},
         name:"RSI"
     };
 
     const layout = {
-        paper_bgcolor:"#0a0a0a",
-        plot_bgcolor:"#0a0a0a",
+        paper_bgcolor:"#000",
+        plot_bgcolor:"#000",
         font:{color:"#ccc"},
+        xaxis:{rangeslider:{visible:false}},
         yaxis:{domain:[0.3,1]},
-        yaxis2:{domain:[0,0.2],range:[0,100]},
-        xaxis2:{matches:"x"},
-        xaxis:{rangeslider:{visible:false}}
+        xaxis2:{anchor:"y2"},
+        yaxis2:{domain:[0,0.25],range:[0,100]}
     };
 
-    Plotly.newPlot("chart",
-        [realTrace,predTrace,ema,sma,vwap,rsi],
-        layout,
-        {responsive:true}
-    );
+    Plotly.newPlot("chart",[candle,ema,sma,vwap,rsi],layout);
 }
 
-setInterval(loadChart,10000);
+setInterval(loadChart,60000);
 loadChart();
