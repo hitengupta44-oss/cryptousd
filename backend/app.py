@@ -11,13 +11,11 @@ app.add_middleware(
 )
 
 DATA = []
-MAX_REAL = 120  # keep history
-
+MAX_REAL = 60
 
 @app.get("/")
 def home():
     return {"status": "running"}
-
 
 @app.post("/update")
 def update(payload: dict):
@@ -25,23 +23,24 @@ def update(payload: dict):
 
     payload_type = payload.get("type", "unknown")
 
-    # If real candle arrives → remove old predictions only
+    # When real candle arrives
     if payload_type == "real":
+        # Remove old predictions
         DATA = [d for d in DATA if d.get("type") != "prediction"]
 
-    DATA.append(payload)
+        # Add real
+        DATA.append(payload)
 
-    # Keep only last real candles
-    real = [d for d in DATA if d.get("type") == "real"]
-    pred = [d for d in DATA if d.get("type") == "prediction"]
-
-    if len(real) > MAX_REAL:
+        # Keep last 60 real candles
+        real = [d for d in DATA if d.get("type") == "real"]
         real = real[-MAX_REAL:]
 
-    DATA = real + pred
+        DATA = real
+
+    elif payload_type == "prediction":
+        DATA.append(payload)
 
     return {"status": "ok"}
-
 
 @app.get("/data")
 def get_data():
