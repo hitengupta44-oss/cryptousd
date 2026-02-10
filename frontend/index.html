@@ -13,48 +13,161 @@ body {
     background: #000;
     font-family: "Segoe UI", Arial;
     color: #ccc;
+    overflow: hidden;
 }
 
-/* Header */
-.header {
-    height: 50px;
+/* ===== Top Bar ===== */
+.topbar {
+    height: 60px;
     background: #0b0b0b;
     border-bottom: 1px solid #1f1f1f;
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 0 20px;
-    font-size: 16px;
-    font-weight: 600;
 }
 
 .logo {
     font-size: 18px;
+    font-weight: 600;
+    color: #fff;
+}
+
+.status {
+    display: flex;
+    gap: 20px;
+    font-size: 13px;
 }
 
 .live {
     color: #4caf50;
+}
+
+.price {
+    font-size: 16px;
+    font-weight: 600;
+    color: #26a69a;
+}
+
+/* ===== Layout ===== */
+.container {
+    display: flex;
+    height: calc(100vh - 60px);
+}
+
+/* Left Panel */
+.sidebar {
+    width: 220px;
+    background: #0b0b0b;
+    border-right: 1px solid #1f1f1f;
+    padding: 15px;
+    box-sizing: border-box;
+}
+
+.panel-title {
+    font-size: 13px;
+    color: #888;
+    margin-bottom: 10px;
+}
+
+.panel-item {
+    background: #111;
+    padding: 8px 10px;
+    margin-bottom: 8px;
+    border-radius: 4px;
     font-size: 13px;
 }
 
-/* Chart */
+/* Chart Area */
+.chart-area {
+    flex: 1;
+    position: relative;
+}
+
 #chart {
     width: 100%;
-    height: calc(100vh - 50px);
+    height: 100%;
+}
+
+/* Prediction Label */
+.forecast-label {
+    position: absolute;
+    right: 20px;
+    top: 10px;
+    background: rgba(255,165,0,0.1);
+    color: orange;
+    padding: 6px 10px;
+    font-size: 12px;
+    border-radius: 4px;
+    border: 1px solid orange;
 }
 </style>
 </head>
 
 <body>
 
-<div class="header">
+<!-- Top Bar -->
+<div class="topbar">
     <div class="logo">BTCUSD — AI Trading Terminal</div>
-    <div class="live">● LIVE</div>
+    <div class="status">
+        <div class="price" id="price">--</div>
+        <div class="live">● LIVE</div>
+        <div id="lastUpdate">Updating...</div>
+    </div>
 </div>
 
-<div id="chart"></div>
+<div class="container">
+
+    <!-- Left Panel -->
+    <div class="sidebar">
+        <div class="panel-title">SYSTEM</div>
+        <div class="panel-item">Timeframe: 1 Minute</div>
+        <div class="panel-item">History: 60 Candles</div>
+        <div class="panel-item">Prediction: Next 10 Min</div>
+
+        <div class="panel-title" style="margin-top:15px;">INDICATORS</div>
+        <div class="panel-item">EMA 20</div>
+        <div class="panel-item">SMA 50</div>
+        <div class="panel-item">VWAP</div>
+        <div class="panel-item">RSI</div>
+
+        <div class="panel-title" style="margin-top:15px;">MODEL</div>
+        <div class="panel-item">LSTM Forecast</div>
+        <div class="panel-item">Live Retraining</div>
+    </div>
+
+    <!-- Chart Area -->
+    <div class="chart-area">
+        <div class="forecast-label">Forecast Zone</div>
+        <div id="chart"></div>
+    </div>
+
+</div>
 
 <script src="script.js"></script>
+
+<script>
+// Update price + last update time (optional helper)
+const API = "https://cryptousdlive-1.onrender.com/data";
+
+async function updateStatus(){
+    try{
+        const res = await fetch(API);
+        const data = await res.json();
+        if(data.length){
+            const lastReal = data.filter(d=>d.type==="real").slice(-1)[0];
+            document.getElementById("price").innerText =
+                "Price: " + lastReal.close.toFixed(2);
+
+            document.getElementById("lastUpdate").innerText =
+                "Updated: " + new Date(lastReal.time).toLocaleTimeString();
+        }
+    }catch{}
+}
+
+setInterval(updateStatus,10000);
+updateStatus();
+</script>
 
 </body>
 </html>
