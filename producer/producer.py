@@ -9,23 +9,32 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import LSTM, Dense, Dropout
 import ta
 
+# ================= SETTINGS =================
 BACKEND_URL = "https://cryptousdlive-1.onrender.com/update"
-
 SYMBOL = "BTCUSD"
 TIMEFRAME = mt5.TIMEFRAME_M1
 LOOKBACK = 60
 PRED_MINUTES = 10
 
-
+# ================= MT5 =================
 if not mt5.initialize():
-    print("MT5 failed")
+    print("MT5 initialization failed")
     quit()
 
+print("Producer started")
+
+# ================= GLOBALS =================
 model = None
+scaler = MinMaxScaler()
+model_trained = False
 last_candle_time = None
 
+FEATURES = ["close","EMA20","SMA50","RSI","MACD","MACD_SIGNAL","VWAP"]
+
+# ================= LOOP =================
 while True:
     try:
+        # -------- Fetch last 24 hours --------
         end_time = datetime.now()
         start_time = end_time - timedelta(hours=24)
 
@@ -33,9 +42,13 @@ while True:
         df = pd.DataFrame(rates)
         df["time"] = pd.to_datetime(df["time"], unit="s")
 
-        # Only closed candle
+        if len(df) < LOOKBACK + 50:
+            time.sleep(10)
+            continue
+
         current_time = df.iloc[-1]["time"]
 
+        # Process only when new candle arrives
         if last_candle_time == current_time:
             time.sleep(5)
             continue
@@ -43,7 +56,7 @@ while True:
         last_candle_time = current_time
         print("New candle:", current_time)
 
-        # Indicators
+        # ================= INDICATORS =================
         df["EMA20"] = df["close"].ewm(span=20).mean()
         df["SMA50"] = df["close"].rolling(50).mean()
         df["RSI"] = ta.momentum.RSIIndicator(df["close"]).rsi()
@@ -56,11 +69,15 @@ while True:
 
         df = df.dropna()
 
-        features = ["close","EMA20","SMA50","RSI","MACD","MACD_SIGNAL","VWAP"]
-        scaler = MinMaxScaler()
-        scaled = scaler.fit_transform(df[features])
+        # ================= SCALING =================
+        data = df[FEATURES].values
 
-        # Create sequences
+        if not model_trained:
+            scaled = scaler.fit_transform(data)
+        else:
+            scaled = scaler.transform(data)
+
+        # ================= SEQUENCES =================
         X, y = [], []
         for i in range(LOOKBACK, len(scaled)):
             X.append(scaled[i-LOOKBACK:i])
@@ -68,10 +85,10 @@ while True:
 
         X, y = np.array(X), np.array(y)
 
-        # Build model if first run
+        # ================= MODEL =================
         if model is None:
             model = Sequential([
-                LSTM(64, return_sequences=True, input_shape=(LOOKBACK, len(features))),
+                LSTM(64, return_sequences=True, input_shape=(LOOKBACK, len(FEATURES))),
                 Dropout(0.2),
                 LSTM(32),
                 Dense(16, activation="relu"),
@@ -79,10 +96,19 @@ while True:
             ])
             model.compile(optimizer="adam", loss="mse")
 
-        # Train every minute on last 24h
-        model.fit(X, y, epochs=2, batch_size=32, verbose=0)
+        # First training (stable)
+        if not model_trained:
+            print("Initial training...")
+            model.fit(X, y, epochs=10, batch_size=32, verbose=0)
+            model_trained = True
+        else:
+            # Live retraining every minute
+            model.fit(X, y, epochs=1, batch_size=32, verbose=0)
 
-        # ===== Send last 60 real candles =====
+        # Market volatility for realistic predictions
+        volatility = df["close"].pct_change().std()
+
+        # ================= SEND LAST 60 REAL =================
         real_60 = df.tail(60)
 
         for _, row in real_60.iterrows():
@@ -100,16 +126,23 @@ while True:
             }
             requests.post(BACKEND_URL, json=payload)
 
-        # ===== Predictions =====
+        # ================= PREDICTIONS =================
         last_seq = scaled[-LOOKBACK:]
         temp_df = df.copy()
 
         for i in range(PRED_MINUTES):
-            pred_scaled = model.predict(last_seq.reshape(1,LOOKBACK,len(features)), verbose=0)[0][0]
+
+            pred_scaled = model.predict(
+                last_seq.reshape(1, LOOKBACK, len(FEATURES)),
+                verbose=0
+            )[0][0]
 
             pred_price = scaler.inverse_transform(
-                np.hstack([[pred_scaled], np.zeros(len(features)-1)]).reshape(1,-1)
+                np.hstack([[pred_scaled], np.zeros(len(FEATURES)-1)]).reshape(1,-1)
             )[0][0]
+
+            # Add small noise (prevents flat line)
+            pred_price = pred_price * (1 + np.random.normal(0, volatility))
 
             prev_close = temp_df.iloc[-1]["close"]
             future_time = temp_df.iloc[-1]["time"] + timedelta(minutes=1)
@@ -125,7 +158,7 @@ while True:
 
             temp_df = pd.concat([temp_df, pd.DataFrame([new_row])])
 
-            # Recalculate indicators for predictions
+            # Recalculate indicators for predicted candle
             temp_df["EMA20"] = temp_df["close"].ewm(span=20).mean()
             temp_df["SMA50"] = temp_df["close"].rolling(50).mean()
             temp_df["RSI"] = ta.momentum.RSIIndicator(temp_df["close"]).rsi()
@@ -148,7 +181,10 @@ while True:
 
             requests.post(BACKEND_URL, json=payload)
 
-            last_seq = scaler.transform(temp_df[features].tail(LOOKBACK))
+            # Update sequence for next step
+            last_seq = scaler.transform(temp_df[FEATURES].tail(LOOKBACK))
+
+        print("Sent 60 real + 10 future")
 
     except Exception as e:
         print("Error:", e)
