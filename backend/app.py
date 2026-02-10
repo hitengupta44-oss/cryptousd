@@ -23,17 +23,13 @@ def home():
 def update(payload: dict):
     global DATA
 
-    # Ensure type exists
-    if "type" not in payload:
-        payload["type"] = "unknown"
-
-    # When a real candle arrives → remove old predictions
-    if payload["type"] == "real":
+    # Remove old predictions when new real candle arrives
+    if payload.get("type") == "real":
         DATA = [d for d in DATA if d.get("type") != "prediction"]
 
     DATA.append(payload)
 
-    # Keep only last records
+    # Keep memory limited
     if len(DATA) > MAX_RECORDS:
         DATA = DATA[-MAX_RECORDS:]
 
