@@ -132,9 +132,18 @@ while True:
             last_train_time = time.time()
 
         # ================= SEND LAST 60 REAL =================
+# Send real candles ONLY when new candle forms
+        if last_candle_time == current_time:
+            time.sleep(5)
+            continue
+
+        last_candle_time = current_time
+        print("New candle:", current_time)
+
         real_60 = df.tail(60)
 
-        for i, row in real_60.iterrows():
+        for _, row in real_60.iterrows():
+
 
             signal = None
             if i > 0:
