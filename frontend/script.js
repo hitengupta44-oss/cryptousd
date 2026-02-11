@@ -7,56 +7,51 @@ async function loadChart() {
         if (!data || data.length === 0) return;
 
         // Convert time
-        data.forEach(d => {
-            d.time = new Date(d.time);
-        });
+        data.forEach(d => d.time = new Date(d.time));
 
-        // Separate
-        const real = data.filter(d => d.type === "real");
-        const pred = data.filter(d => d.type === "prediction");
+        // Separate data
+        const real = data.filter(d => d.type === "real").slice(-60);
+        const pred = data.filter(d => d.type === "prediction").slice(-10);
 
-        const real60 = real.slice(-60);
-        const pred10 = pred.slice(-10);
+        if (real.length === 0) return;
 
-        const combined = [...real60, ...pred10];
-        if (combined.length === 0) return;
+        const combined = [...real, ...pred];
 
         const safe = (arr, key) => arr.map(d => d[key] ?? null);
 
-        // ====================
-        // Candles (Real + Pred)
-        // ====================
-        const candleTrace = {
+        // ======================
+        // REAL CANDLES
+        // ======================
+        const realTrace = {
             type: "candlestick",
-            x: combined.map(d => d.time),
-            open: safe(combined, "open"),
-            high: safe(combined, "high"),   // wicks included
-            low: safe(combined, "low"),
-            close: safe(combined, "close"),
+            x: real.map(d => d.time),
+            open: safe(real, "open"),
+            high: safe(real, "high"),
+            low: safe(real, "low"),
+            close: safe(real, "close"),
             increasing: { line: { color: "#26a69a" } },
             decreasing: { line: { color: "#ef5350" } },
-            name: "Price"
+            name: "Real"
         };
 
-        // ====================
-        // Prediction Overlay
-        // ====================
+        // ======================
+        // PREDICTION CANDLES
+        // ======================
         const predTrace = {
             type: "candlestick",
-            x: pred10.map(d => d.time),
-            open: safe(pred10, "open"),
-            high: safe(pred10, "high"),   // predicted wicks
-            low: safe(pred10, "low"),
-            close: safe(pred10, "close"),
-            increasing: { line: { color: "orange" } },
+            x: pred.map(d => d.time),
+            open: safe(pred, "open"),
+            high: safe(pred, "high"),
+            low: safe(pred, "low"),
+            close: safe(pred, "close"),
+            increasing: { line: { color: "green" } },
             decreasing: { line: { color: "olive" } },
-            opacity: 0.9,
             name: "Prediction"
         };
 
-        // ====================
-        // Indicators
-        // ====================
+        // ======================
+        // INDICATORS (single lines)
+        // ======================
         const emaTrace = {
             x: combined.map(d => d.time),
             y: safe(combined, "ema20"),
@@ -84,9 +79,9 @@ async function loadChart() {
             name: "VWAP"
         };
 
-        // ====================
-        // RSI Panel
-        // ====================
+        // ======================
+        // RSI PANEL (single)
+        // ======================
         const rsiTrace = {
             x: combined.map(d => d.time),
             y: safe(combined, "rsi"),
@@ -98,43 +93,39 @@ async function loadChart() {
             yaxis: "y2"
         };
 
-        // ====================
-        // BUY / SELL Signals
-        // ====================
-        const buySignals = combined.filter(d => d.signal === "BUY");
-        const sellSignals = combined.filter(d => d.signal === "SELL");
+        // ======================
+        // BUY / SELL SIGNALS
+        // ======================
+        const buys = combined.filter(d => d.signal === "BUY");
+        const sells = combined.filter(d => d.signal === "SELL");
 
         const buyTrace = {
-            x: buySignals.map(d => d.time),
-            y: buySignals.map(d => d.close),
+            x: buys.map(d => d.time),
+            y: buys.map(d => d.close),
             mode: "markers",
-            type: "scatter",
-            name: "BUY",
             marker: {
                 symbol: "triangle-up",
-                size: 12,
-                color: "#00ff00",
-                line: { width: 1, color: "#fff" }
-            }
+                color: "lime",
+                size: 10
+            },
+            name: "BUY"
         };
 
         const sellTrace = {
-            x: sellSignals.map(d => d.time),
-            y: sellSignals.map(d => d.close),
+            x: sells.map(d => d.time),
+            y: sells.map(d => d.close),
             mode: "markers",
-            type: "scatter",
-            name: "SELL",
             marker: {
                 symbol: "triangle-down",
-                size: 12,
-                color: "#ff0000",
-                line: { width: 1, color: "#fff" }
-            }
+                color: "red",
+                size: 10
+            },
+            name: "SELL"
         };
 
-        // ====================
-        // Layout
-        // ====================
+        // ======================
+        // LAYOUT
+        // ======================
         const layout = {
             paper_bgcolor: "#000",
             plot_bgcolor: "#000",
@@ -171,7 +162,7 @@ async function loadChart() {
         Plotly.react(
             "chart",
             [
-                candleTrace,
+                realTrace,
                 predTrace,
                 emaTrace,
                 smaTrace,
