@@ -10,8 +10,8 @@ app.add_middleware(
     allow_headers=["*"]
 )
 
-REAL_DATA = []
-PRED_DATA = []
+REAL_DATA = {}
+PRED_DATA = {}
 
 MAX_REAL = 60
 MAX_PRED = 10
@@ -26,24 +26,34 @@ def home():
 def update(payload: dict):
     global REAL_DATA, PRED_DATA
 
-    t = payload.get("type")
+    t = payload["time"]
 
-    if t == "real":
-        # keep last 60 real candles
-        REAL_DATA.append(payload)
-        REAL_DATA = REAL_DATA[-MAX_REAL:]
+    if payload.get("type") == "real":
+        # Replace candle if same timestamp
+        REAL_DATA[t] = payload
 
-        # new real candle → remove old predictions
-        PRED_DATA = []
+        # Keep only latest 60
+        if len(REAL_DATA) > MAX_REAL:
+            sorted_keys = sorted(REAL_DATA.keys())
+            for k in sorted_keys[:-MAX_REAL]:
+                del REAL_DATA[k]
 
-    elif t == "prediction":
-        PRED_DATA.append(payload)
-        PRED_DATA = PRED_DATA[-MAX_PRED:]
+        # New real candle → clear predictions
+        PRED_DATA = {}
+
+    elif payload.get("type") == "prediction":
+        PRED_DATA[t] = payload
+
+        if len(PRED_DATA) > MAX_PRED:
+            sorted_keys = sorted(PRED_DATA.keys())
+            for k in sorted_keys[:-MAX_PRED]:
+                del PRED_DATA[k]
 
     return {"status": "ok"}
 
 
 @app.get("/data")
 def get_data():
-    # return past + future together
-    return REAL_DATA + PRED_DATA
+    real = [REAL_DATA[k] for k in sorted(REAL_DATA.keys())]
+    pred = [PRED_DATA[k] for k in sorted(PRED_DATA.keys())]
+    return real + pred
