@@ -16,6 +16,8 @@ PRED_DATA = {}
 MAX_REAL = 60
 MAX_PRED = 10
 
+last_real_time = None
+
 
 @app.get("/")
 def home():
@@ -24,13 +26,19 @@ def home():
 
 @app.post("/update")
 def update(payload: dict):
-    global REAL_DATA, PRED_DATA
+    global REAL_DATA, PRED_DATA, last_real_time
 
     t = payload["time"]
+    typ = payload.get("type")
 
-    if payload.get("type") == "real":
-        # Replace candle if same timestamp
+    # ================= REAL =================
+    if typ == "real":
         REAL_DATA[t] = payload
+
+        # Detect NEW candle (not historical resend)
+        if last_real_time is None or t > last_real_time:
+            last_real_time = t
+            PRED_DATA = {}  # clear predictions only once per new candle
 
         # Keep only latest 60
         if len(REAL_DATA) > MAX_REAL:
@@ -38,10 +46,8 @@ def update(payload: dict):
             for k in sorted_keys[:-MAX_REAL]:
                 del REAL_DATA[k]
 
-        # New real candle → clear predictions
-        PRED_DATA = {}
-
-    elif payload.get("type") == "prediction":
+    # ================= PRED =================
+    elif typ == "prediction":
         PRED_DATA[t] = payload
 
         if len(PRED_DATA) > MAX_PRED:
