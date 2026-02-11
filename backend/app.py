@@ -4,41 +4,42 @@ from fastapi.middleware.cors import CORSMiddleware
 app = FastAPI()
 
 app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
+CORSMiddleware,
+allow_origins=["*"],
+allow_methods=["*"],
+allow_headers=["*"]
 )
 
 REAL_DATA = []
 PRED_DATA = []
 
+MAX_REAL = 60
+MAX_PRED = 10
+
 @app.get("/")
 def home():
-    return {"status": "running"}
+return {"status": "running"}
 
 @app.post("/update")
 def update(payload: dict):
-    global REAL_DATA, PRED_DATA
+global REAL_DATA, PRED_DATA
 
-    if payload["type"] == "real":
-        # Add real candle
-        REAL_DATA.append(payload)
+```
+if payload.get("type") == "real":
+    # keep only last 60 real candles
+    REAL_DATA.append(payload)
+    REAL_DATA = REAL_DATA[-MAX_REAL:]
 
-        # Keep only last 60 real candles
-        REAL_DATA = REAL_DATA[-60:]
+    # new real candle → remove old predictions
+    PRED_DATA = []
 
-        # Clear old predictions (important)
-        PRED_DATA = []
+elif payload.get("type") == "prediction":
+    PRED_DATA.append(payload)
+    PRED_DATA = PRED_DATA[-MAX_PRED:]
 
-    elif payload["type"] == "prediction":
-        PRED_DATA.append(payload)
-
-        # Keep only last 10 predictions
-        PRED_DATA = PRED_DATA[-10:]
-
-    return {"status": "ok"}
+return {"status": "ok"}
+```
 
 @app.get("/data")
 def get_data():
-    return REAL_DATA + PRED_DATA
+return REAL_DATA + PRED_DATA
