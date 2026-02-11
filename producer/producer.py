@@ -9,7 +9,7 @@ from tensorflow.keras.layers import LSTM, Dense, Dropout, Input
 import ta
 from binance.client import Client
 
-# ===== Flask (for Render keep-alive) =====
+# ===== Flask (Render keep-alive) =====
 from flask import Flask
 import threading
 
@@ -37,7 +37,7 @@ RETRAIN_INTERVAL = 30 * 60
 # ================= BINANCE =================
 client = Client()
 
-print("Producer started — MT5 Logic (Binance)")
+print("Producer started — MT5 Logic Stable")
 
 model = None
 scaler = MinMaxScaler()
@@ -75,12 +75,13 @@ def fetch_24h():
 
     return df[['time','open','high','low','close','volume']]
 
-# ================= LOOP =================
+# ================= MAIN LOOP =================
 while True:
     try:
         df = fetch_24h()
         current_time = df.iloc[-1]["time"]
 
+        # ===== Run ONLY on new closed candle =====
         if last_candle_time == current_time:
             time.sleep(5)
             continue
@@ -102,7 +103,7 @@ while True:
 
         df = df.dropna()
 
-        features = ["RET", "EMA20", "SMA50", "RSI", "MACD", "MACD_SIGNAL", "VWAP"]
+        features = ["RET","EMA20","SMA50","RSI","MACD","MACD_SIGNAL","VWAP"]
 
         # ================= SCALE =================
         scaled = scaler.fit_transform(df[features])
@@ -132,22 +133,12 @@ while True:
             last_train_time = time.time()
 
         # ================= SEND LAST 60 REAL =================
-# Send real candles ONLY when new candle forms
-        if last_candle_time == current_time:
-            time.sleep(5)
-            continue
+        real_60 = df.tail(60).reset_index(drop=True)
 
-        last_candle_time = current_time
-        print("New candle:", current_time)
-
-        real_60 = df.tail(60)
-
-        for _, row in real_60.iterrows():
-
-
+        for idx, row in real_60.iterrows():
             signal = None
-            if i > 0:
-                prev = df.iloc[i-1]
+            if idx > 0:
+                prev = real_60.iloc[idx-1]
                 if row["EMA20"] > row["SMA50"] and prev["EMA20"] <= prev["SMA50"]:
                     signal = "BUY"
                 elif row["EMA20"] < row["SMA50"] and prev["EMA20"] >= prev["SMA50"]:
@@ -167,14 +158,14 @@ while True:
                 "type": "real"
             })
 
-        # ================= PREDICTION =================
+        # ================= PREDICTIONS =================
         volatility = df["RET"].std()
         last_price = df.iloc[-1]["close"]
 
         last_seq = scaled[-LOOKBACK:]
         temp_df = df.copy()
 
-        for i in range(PRED_MINUTES):
+        for _ in range(PRED_MINUTES):
 
             pred_scaled = model.predict(
                 last_seq.reshape(1, LOOKBACK, len(features)),
@@ -185,8 +176,8 @@ while True:
                 np.hstack([[pred_scaled], np.zeros(len(features)-1)]).reshape(1, -1)
             )[0][0]
 
+            # Stability controls (MT5 logic)
             pred_ret = np.clip(pred_ret, -2.5*volatility, 2.5*volatility)
-
             pred_price = last_price * (1 + pred_ret)
 
             ema = temp_df.iloc[-1]["EMA20"]
@@ -195,11 +186,18 @@ while True:
 
             future_time = temp_df.iloc[-1]["time"] + timedelta(minutes=1)
 
+            # Realistic wicks
+            body = abs(pred_price - last_price)
+            wick = max(body * 0.5, last_price * volatility * 0.2)
+
+            high_p = max(last_price, pred_price) + wick
+            low_p = min(last_price, pred_price) - wick
+
             new_row = {
                 "time": future_time,
                 "open": last_price,
-                "high": max(last_price, pred_price),
-                "low": min(last_price, pred_price),
+                "high": high_p,
+                "low": low_p,
                 "close": pred_price,
                 "volume": temp_df.iloc[-1]["volume"]
             }
@@ -210,9 +208,6 @@ while True:
             temp_df["EMA20"] = temp_df["close"].ewm(span=20, adjust=False).mean()
             temp_df["SMA50"] = temp_df["close"].rolling(50).mean()
             temp_df["RSI"] = ta.momentum.RSIIndicator(temp_df["close"], window=14).rsi()
-            macd = ta.trend.MACD(temp_df["close"])
-            temp_df["MACD"] = macd.macd()
-            temp_df["MACD_SIGNAL"] = macd.macd_signal()
             temp_df["VWAP"] = (temp_df["close"] * temp_df["volume"]).cumsum() / temp_df["volume"].cumsum()
             temp_df["RET"] = temp_df["close"].pct_change()
 
