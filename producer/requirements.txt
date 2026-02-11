@@ -5,4 +5,5 @@ scikit-learn
 tensorflow
 ta
 python-binance
-websocket-client
+flask
+gunicorn
