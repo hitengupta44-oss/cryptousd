@@ -10,7 +10,7 @@ from tensorflow.keras.layers import LSTM, Dense, Dropout, Input
 import ta
 from binance.client import Client
 
-# ===== Flask keep-alive (Render) =====
+# ===== Flask keep-alive (Render Web Service) =====
 from flask import Flask
 import threading
 
@@ -29,6 +29,9 @@ threading.Thread(target=run_flask).start()
 # ================= CONFIG =================
 
 BACKEND_URL = "https://cryptoliveusdt.onrender.com/update"
+BACKEND_HOME = "https://cryptoliveusdt.onrender.com/"
+SERVICE_URL = "https://producerlive.onrender.com/"
+
 SYMBOL = "BTCUSDT"
 INTERVAL = Client.KLINE_INTERVAL_1MINUTE
 LOOKBACK = 60
@@ -43,6 +46,10 @@ model = None
 scaler = MinMaxScaler()
 last_candle_time = None
 last_train_time = None
+
+# Keep-alive timers
+last_self_ping = 0
+last_backend_ping = 0
 
 # ================= MODEL =================
 
@@ -81,9 +88,28 @@ def fetch_data():
 
 while True:
     try:
+        # ===== Render Keep-Alive Fix =====
+        # Ping self every 5 minutes
+        if time.time() - last_self_ping > 300:
+            try:
+                requests.get(SERVICE_URL, timeout=5)
+                print("Self ping successful")
+            except:
+                print("Self ping failed")
+            last_self_ping = time.time()
+
+        # Ping backend home every 5 minutes
+        if time.time() - last_backend_ping > 300:
+            try:
+                requests.get(BACKEND_HOME, timeout=5)
+                print("Backend keep-alive ping")
+            except:
+                print("Backend ping failed")
+            last_backend_ping = time.time()
+
         df = fetch_data()
 
-        # ===== Safety check (Binance failure protection) =====
+        # ===== Safety check =====
         if df is None or len(df) < 100:
             print("Data fetch issue, retrying...")
             time.sleep(5)
@@ -114,14 +140,12 @@ while True:
 
         # ===== Sequences =====
         X, y = [], []
-        saled = scaled
-        for i in range(LOOKBACK, len(saled)):
+        for i in range(LOOKBACK, len(saled := scaled)):
             X.append(saled[i-LOOKBACK:i])
             y.append(saled[i,0])
 
         X, y = np.array(X), np.array(y)
 
-        # Safety: avoid training on empty data
         if len(X) == 0:
             print("Not enough data for training")
             time.sleep(5)
@@ -184,14 +208,11 @@ while True:
             pred_ret = np.clip(pred_ret, -2.5*volatility, 2.5*volatility)
             pred_price = last_price * (1 + pred_ret)
 
-            # Mean reversion
             ema = temp_df.iloc[-1]["EMA20"]
             pred_price = 0.9 * pred_price + 0.1 * ema
 
-            # Noise
             pred_price *= (1 + np.random.normal(0, volatility/2))
 
-            # Wicks
             body = abs(pred_price - last_price)
             wick = max(body*0.5, last_price*volatility*0.2)
 
