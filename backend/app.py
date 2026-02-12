@@ -39,19 +39,17 @@ def update(payload: dict):
             last_real_time = t
             PRED_DATA = {}
 
-        # Keep last 60 real
-        if len(REAL_DATA) > MAX_REAL:
-            for k in sorted(REAL_DATA.keys())[:-MAX_REAL]:
-                del REAL_DATA[k]
+        # Keep last 60 efficiently (no sorting)
+        while len(REAL_DATA) > MAX_REAL:
+            REAL_DATA.pop(next(iter(REAL_DATA)))
 
     # ===== PREDICTION DATA =====
     elif typ == "prediction":
         PRED_DATA[t] = payload
 
-        # Keep last 10 predictions
-        if len(PRED_DATA) > MAX_PRED:
-            for k in sorted(PRED_DATA.keys())[:-MAX_PRED]:
-                del PRED_DATA[k]
+        # Keep last 10 efficiently
+        while len(PRED_DATA) > MAX_PRED:
+            PRED_DATA.pop(next(iter(PRED_DATA)))
 
     return {"status": "ok"}
 
