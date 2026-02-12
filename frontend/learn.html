@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>CryptoAI Learning</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+body{
+    margin:0;
+    font-family: Arial, sans-serif;
+    background:#000;
+    color:#ccc;
+}
+
+/* Navbar */
+.navbar{
+    height:60px;
+    background:#0b0b0b;
+    border-bottom:1px solid #1f1f1f;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:0 30px;
+}
+
+.logo{
+    color:#00e5ff;
+    font-size:22px;
+    font-weight:bold;
+}
+
+.menu a{
+    margin-left:25px;
+    text-decoration:none;
+    color:#ccc;
+}
+
+.menu a:hover{
+    color:#00e5ff;
+}
+
+/* Container */
+.learn-container{
+    max-width:900px;
+    margin:auto;
+    padding:20px;
+    text-align:center;
+}
+
+/* Flashcard */
+.flashcard{
+    background:#0b0b0b;
+    border:1px solid #1f1f1f;
+    border-radius:10px;
+    padding:20px;
+    margin-top:15px;
+    display:none;
+    text-align:left;
+}
+
+.flashcard.active{
+    display:block;
+}
+
+/* Smaller image */
+.flashcard img{
+    width:100%;
+    max-height:280px;
+    object-fit:contain;
+    border-radius:6px;
+    margin:10px 0;
+    background:#000;
+}
+
+/* Formula box */
+.formula{
+    background:#111;
+    border-left:3px solid #00e5ff;
+    padding:10px;
+    margin:10px 0;
+    font-family: monospace;
+    color:#fff;
+}
+
+/* Bullet spacing */
+ul{
+    line-height:1.6;
+}
+
+/* Arrow controls */
+.controls{
+    margin-top:20px;
+    text-align:center;
+}
+
+.arrow{
+    font-size:28px;
+    padding:10px 18px;
+    margin:10px;
+    background:#1f1f1f;
+    border:none;
+    color:#fff;
+    border-radius:6px;
+    cursor:pointer;
+}
+
+.arrow:hover{
+    background:#00e5ff;
+    color:#000;
+}
+</style>
+</head>
+
+<body>
+
+<div class="navbar">
+    <div class="logo">CryptoAI</div>
+    <div class="menu">
+        <a href="home.html">Home</a>
+        <a href="https://cryptousd-qrvd.vercel.app/" target="_blank">Live Dashboard</a>
+    </div>
+</div>
+
+<div class="learn-container">
+
+<h1>Trading Flashcards</h1>
+
+<!-- Flashcard 1 -->
+<div class="flashcard active">
+<h2>Moving Averages & VWAP</h2>
+<img src="images/avg.png">
+
+<div class="formula">
+SMA = (P₁ + P₂ + ... + Pₙ) / n  
+EMA = (Price × k) + (Previous EMA × (1 − k))  
+k = 2 / (n + 1)  
+VWAP = Σ(Price × Volume) / Σ(Volume)
+</div>
+
+<ul>
+<li>SMA shows the average price over a period and reflects long-term trend direction.</li>
+<li>EMA gives more weight to recent prices and reacts faster to market changes.</li>
+<li>VWAP represents the true average price based on trading volume.</li>
+<li>Institutions use VWAP as a fair value benchmark.</li>
+<li>Price above these levels indicates bullish strength.</li>
+<li>Price below them suggests bearish pressure.</li>
+<li>EMA crossing above SMA often signals momentum shifts.</li>
+<li>VWAP acts as dynamic support and resistance.</li>
+</ul>
+</div>
+
+<!-- Flashcard 2 -->
+<div class="flashcard">
+<h2>Bollinger Bands & RSI</h2>
+<img src="images/rsi.png">
+
+<div class="formula">
+Middle Band = 20-period SMA  
+Upper Band = SMA + (2 × Standard Deviation)  
+Lower Band = SMA − (2 × Standard Deviation)  
+
+RSI = 100 − [100 / (1 + RS)]
+</div>
+
+<ul>
+<li>Bollinger Bands measure market volatility.</li>
+<li>Expanding bands indicate high volatility.</li>
+<li>Contracting bands suggest consolidation.</li>
+<li>Price near upper band may signal overbought conditions.</li>
+<li>Price near lower band may signal oversold conditions.</li>
+<li>RSI measures momentum between 0 and 100.</li>
+<li>Above 70 indicates overbought.</li>
+<li>Below 30 indicates oversold.</li>
+<li>Divergence between price and RSI can signal reversals.</li>
+</ul>
+</div>
+
+<!-- Flashcard 3 -->
+<div class="flashcard">
+<h2>Candlestick Reversal Patterns</h2>
+<img src="images/pattern.png">
+
+<ul>
+<li>Hammer appears after a downtrend and signals strong buying pressure.</li>
+<li>Long lower wick shows rejection of lower prices.</li>
+<li>Shooting Star appears after an uptrend and signals selling pressure.</li>
+<li>Long upper wick shows rejection of higher prices.</li>
+<li>Bullish Engulfing occurs when a large green candle covers the previous red candle.</li>
+<li>This indicates a shift from sellers to buyers.</li>
+<li>These patterns help identify potential reversal zones.</li>
+<li>Confirmation with volume or support levels improves reliability.</li>
+</ul>
+</div>
+
+<!-- Flashcard 4 -->
+<div class="flashcard">
+<h2>Market Trends & Complex Patterns</h2>
+<img src="images/complex.png">
+
+<ul>
+<li>An uptrend is defined by higher highs and higher lows.</li>
+<li>Downtrend shows lower highs and lower lows.</li>
+<li>Morning Star is a three-candle bullish reversal pattern.</li>
+<li>Evening Star signals bearish reversal.</li>
+<li>Three White Soldiers indicate strong bullish continuation.</li>
+<li>Three Black Crows indicate strong bearish continuation.</li>
+<li>Doji represents market indecision.</li>
+<li>Patterns are more reliable when aligned with overall trend direction.</li>
+</ul>
+</div>
+
+<!-- Arrow Controls -->
+<div class="controls">
+<button class="arrow" onclick="prevCard()">&#8592;</button>
+<button class="arrow" onclick="nextCard()">&#8594;</button>
+</div>
+
+</div>
+
+<script>
+let current = 0;
+const cards = document.querySelectorAll(".flashcard");
+
+function showCard(index){
+    cards.forEach(c => c.classList.remove("active"));
+    cards[index].classList.add("active");
+}
+
+function nextCard(){
+    current = (current + 1) % cards.length;
+    showCard(current);
+}
+
+function prevCard(){
+    current = (current - 1 + cards.length) % cards.length;
+    showCard(current);
+}
+</script>
+
+</body>
+</html>
