@@ -83,10 +83,17 @@ while True:
     try:
         df = fetch_data()
 
+        # ===== Safety check (Binance failure protection) =====
+        if df is None or len(df) < 100:
+            print("Data fetch issue, retrying...")
+            time.sleep(5)
+            continue
+
         # Use LAST CLOSED candle
         current_time = df.iloc[-2]["time"]
 
         if last_candle_time == current_time:
+            print("Waiting for new candle...")
             time.sleep(5)
             continue
 
@@ -116,6 +123,7 @@ while True:
 
         # Safety: avoid training on empty data
         if len(X) == 0:
+            print("Not enough data for training")
             time.sleep(5)
             continue
 
@@ -153,7 +161,7 @@ while True:
                 "rsi": float(row["RSI"]),
                 "signal": signal,
                 "type": "real"
-            })
+            }, timeout=5)
 
         # ===== Predictions =====
         volatility = df["RET"].std()
@@ -230,7 +238,7 @@ while True:
                 "rsi": float(latest["RSI"]),
                 "signal": signal,
                 "type": "prediction"
-            })
+            }, timeout=5)
 
             last_price = pred_price
             last_seq = scaler.transform(temp_df[features].tail(LOOKBACK))
