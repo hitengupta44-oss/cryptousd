@@ -2,8 +2,6 @@ CryptoUSD is a real-time cryptocurrency monitoring and prediction system that di
 
 The goal of this project is to simulate a live trading terminal where users can see the latest market candles and a machine learning-based prediction for the next few minutes. This project combines real-time data handling, time-series forecasting, backend APIs, and an interactive frontend.
 
-What This Project Does
-
 Fetches live BTC/USD market data
 
 Shows the latest 60 candles on a chart
@@ -113,9 +111,10 @@ Purpose
 Learn patterns from the last 60 minutes of price data
 
 Predict short-term market movement for the next 10 minutes
-<img width="1918" height="875" alt="image" src="https://github.com/user-attachments/assets/f0298363-0c5c-4d3b-986a-f1b3d87eb45b" />
+
 <img width="1561" height="575" alt="image" src="https://github.com/user-attachments/assets/c0b453eb-3eb7-4402-a00d-c13325ebf1ca" />
 <img width="1918" height="872" alt="image" src="https://github.com/user-attachments/assets/edd49418-7e95-4d32-b42b-a43928be41de" />
+<img width="1918" height="875" alt="image" src="https://github.com/user-attachments/assets/f0298363-0c5c-4d3b-986a-f1b3d87eb45b" />
 <img width="1918" height="855" alt="image" src="https://github.com/user-attachments/assets/7f3db7f2-2aaf-4f25-aac6-bd282a053c29" />
 <img width="1918" height="870" alt="image" src="https://github.com/user-attachments/assets/d9e01c26-0aba-4800-9ee9-6771cc7178c4" />
 <img width="1918" height="867" alt="image" src="https://github.com/user-attachments/assets/f706432a-13a2-4038-833c-cdc868201383" />
@@ -123,6 +122,6 @@ Predict short-term market movement for the next 10 minutes
 
 
 Live Dashboard Link
-https://cryptousd-qrvd.vercel.app/
+https://cryptoai-phi.vercel.app/
 
 
