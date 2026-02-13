@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CryptoAI - Trading Academy</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+    /* --- CORE VARIABLES (MATCHING LANDING PAGE) --- */
+    :root {
+        --bg-main: #050505;
+        --bg-surface: #111111;
+        --accent: #00e599; 
+        --accent-glow: rgba(0, 229, 153, 0.2);
+        --text-white: #ffffff;
+        --text-grey: #888888;
+        --border-color: #222;
+        --code-bg: #0a0a0a;
+    }
+
+    /* --- RESET & GLOBAL SETTINGS --- */
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: 'Inter', sans-serif;
+    }
+
+    body {
+        background-color: var(--bg-main);
+        color: var(--text-white);
+        line-height: 1.6;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+    }
+
+    a { text-decoration: none; color: inherit; transition: 0.3s; }
+    ul { list-style: none; }
+
+    /* --- BACKGROUND EFFECTS --- */
+    .bg-grid {
+        position: fixed;
+        top: 0; left: 0; width: 100%; height: 100%;
+        background-image: 
+            linear-gradient(var(--border-color) 1px, transparent 1px),
+            linear-gradient(90deg, var(--border-color) 1px, transparent 1px);
+        background-size: 50px 50px;
+        opacity: 0.1;
+        z-index: -2;
+        mask-image: linear-gradient(to bottom, black 20%, transparent 100%);
+        pointer-events: none;
+    }
+
+    /* --- NAVBAR --- */
+    .navbar {
+        height: 80px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 1px solid var(--border-color);
+        background: rgba(5, 5, 5, 0.8);
+        backdrop-filter: blur(10px);
+        padding: 0 40px;
+        position: sticky;
+        top: 0;
+        z-index: 100;
+    }
+
+    .logo {
+        font-size: 24px;
+        font-weight: 700;
+        color: var(--text-white);
+        letter-spacing: -0.5px;
+    }
+    .logo span { color: var(--accent); }
+
+    .menu { display: flex; gap: 30px; }
+    .menu a {
+        font-size: 15px; font-weight: 500; color: var(--text-grey);
+    }
+    .menu a:hover { color: var(--text-white); }
+    
+    .btn-nav {
+        padding: 8px 20px;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        background: transparent;
+        color: var(--text-white);
+        font-weight: 600;
+        font-size: 14px;
+        cursor: pointer;
+        transition: 0.3s;
+    }
+    .btn-nav:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* --- LEARNING CONTAINER --- */
+    .learn-container {
+        max-width: 800px;
+        margin: 60px auto;
+        padding: 0 20px;
+        width: 100%;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .header-section {
+        text-align: center;
+        margin-bottom: 40px;
+    }
+
+    .header-section h1 {
+        font-size: 36px;
+        font-weight: 700;
+        margin-bottom: 10px;
+    }
+    
+    .header-section p { color: var(--text-grey); }
+
+    /* --- FLASHCARD COMPONENT --- */
+    .card-wrapper {
+        position: relative;
+        background: var(--bg-surface);
+        border: 1px solid var(--border-color);
+        border-radius: 24px;
+        padding: 40px;
+        box-shadow: 0 20px 40px -10px rgba(0,0,0,0.5);
+        overflow: hidden;
+    }
+
+    /* Progress Bar */
+    .progress-container {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 30px;
+        font-size: 14px;
+        color: var(--text-grey);
+        font-weight: 600;
+    }
+    
+    .progress-bar {
+        flex: 1;
+        height: 4px;
+        background: #222;
+        border-radius: 2px;
+        margin: 0 15px;
+        overflow: hidden;
+    }
+    
+    .progress-fill {
+        height: 100%;
+        background: var(--accent);
+        width: 25%; /* Dynamic */
+        transition: width 0.3s ease;
+        box-shadow: 0 0 10px var(--accent);
+    }
+
+    /* Flashcard Content */
+    .flashcard {
+        display: none;
+        animation: fadeIn 0.4s ease;
+    }
+
+    .flashcard.active { display: block; }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .flashcard h2 {
+        font-size: 24px;
+        color: var(--accent);
+        margin-bottom: 20px;
+    }
+
+    /* Image Styling */
+    .img-container {
+        width: 100%;
+        height: 200px;
+        background: #0a0a0a;
+        border: 1px dashed var(--border-color);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 25px;
+        color: #333;
+        font-size: 14px;
+    }
+
+    .flashcard img {
+        max-width: 100%;
+        max-height: 100%;
+        border-radius: 8px;
+        display: block; /* Hides the broken image icon if src is empty for now */
+    }
+
+    /* Code/Formula Box */
+    .formula-box {
+        background: var(--code-bg);
+        border-left: 3px solid var(--accent);
+        padding: 15px 20px;
+        border-radius: 0 8px 8px 0;
+        margin-bottom: 25px;
+        font-family: 'Courier New', monospace;
+        font-size: 14px;
+        color: #ccc;
+        line-height: 1.5;
+    }
+
+    /* List Items */
+    ul { margin-left: 20px; }
+    li {
+        margin-bottom: 12px;
+        position: relative;
+        padding-left: 10px;
+        color: #ddd;
+    }
+    li::before {
+        content: "•";
+        color: var(--accent);
+        font-weight: bold;
+        display: inline-block;
+        width: 1em;
+        margin-left: -1em;
+    }
+
+    /* --- CONTROLS --- */
+    .controls {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 30px;
+        padding-top: 20px;
+        border-top: 1px solid var(--border-color);
+    }
+
+    .btn-control {
+        background: var(--bg-main);
+        color: var(--text-white);
+        border: 1px solid var(--border-color);
+        padding: 12px 24px;
+        border-radius: 50px;
+        cursor: pointer;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: 0.3s;
+    }
+
+    .btn-control:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+        background: rgba(0, 229, 153, 0.05);
+    }
+
+    /* Mobile */
+    @media (max-width: 600px) {
+        .navbar { padding: 0 20px; }
+        .menu { display: none; } /* Hide menu on small screens */
+        .card-wrapper { padding: 25px; }
+        .header-section h1 { font-size: 28px; }
+    }
+</style>
+</head>
+
+<body>
+
+    <div class="bg-grid"></div>
+
+    <nav class="navbar">
+        <div class="logo">
+            // Crypto<span>AI</span>
+        </div>
+        <div class="menu">
+            <a href="index.html">Home</a>
+            <a href="https://cryptousd-qrvd.vercel.app/" target="_blank">Dashboard</a>
+            <a href="chat.html">AI Chat</a>
+        </div>
+        <a href="https://cryptousd-qrvd.vercel.app/" target="_blank">
+            <button class="btn-nav">Launch App</button>
+        </a>
+    </nav>
+
+    <div class="learn-container">
+
+        <div class="header-section">
+            <h1>Trading Academy</h1>
+            <p>Master technical analysis one concept at a time.</p>
+        </div>
+
+        <div class="card-wrapper">
+            
+            <div class="progress-container">
+                <span id="step-count">Card 1 of 4</span>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progress-fill"></div>
+                </div>
+            </div>
+
+            <div class="flashcard active">
+                <h2>Moving Averages & VWAP</h2>
+                <div class="img-container">
+                    <img src="images/avg.png" alt="Graph showing Moving Averages">
+                </div>
+                
+                <div class="formula-box">
+                    SMA = (P₁ + ... + Pₙ) / n <br>
+                    EMA = (Price × k) + (Prev EMA × (1 − k)) <br>
+                    VWAP = Σ(Price × Volume) / Σ(Volume)
+                </div>
+
+                <ul>
+                    <li><strong>SMA:</strong> Smoothes price data to show long-term trends.</li>
+                    <li><strong>EMA:</strong> Reacts faster to recent price changes (better for day trading).</li>
+                    <li><strong>VWAP:</strong> Used by institutions; represents the true average price weighted by volume.</li>
+                    <li><strong>Trading Signal:</strong> Price > VWAP is typically bullish; Price < VWAP is bearish.</li>
+                </ul>
+            </div>
+
+            <div class="flashcard">
+                <h2>Bollinger Bands & RSI</h2>
+                <div class="img-container">
+                    <img src="images/rsi.png" alt="RSI Indicator">
+                </div>
+
+                <div class="formula-box">
+                    Upper Band = SMA + (2 × Std Dev)<br>
+                    Lower Band = SMA − (2 × Std Dev)<br>
+                    RSI = 100 − [100 / (1 + RS)]
+                </div>
+
+                <ul>
+                    <li><strong>Bollinger Bands:</strong> Measure volatility. Expanding bands = high volatility.</li>
+                    <li><strong>Squeeze:</strong> Contracting bands often precede a major breakout.</li>
+                    <li><strong>RSI > 70:</strong> Overbought (Potential reversal down).</li>
+                    <li><strong>RSI < 30:</strong> Oversold (Potential bounce up).</li>
+                </ul>
+            </div>
+
+            <div class="flashcard">
+                <h2>Candlestick Reversals</h2>
+                <div class="img-container">
+                    <img src="images/pattern.png" alt="Candlestick Patterns">
+                </div>
+
+                <div class="formula-box">
+                    Logic: Rejection of Price Levels<br>
+                    Context: Look for these at Support/Resistance
+                </div>
+
+                <ul>
+                    <li><strong>Hammer:</strong> Long lower wick after a downtrend. Buyers are stepping in.</li>
+                    <li><strong>Shooting Star:</strong> Long upper wick after an uptrend. Sellers are rejecting high prices.</li>
+                    <li><strong>Bullish Engulfing:</strong> A large green candle completely consumes the previous small red candle.</li>
+                </ul>
+            </div>
+
+            <div class="flashcard">
+                <h2>Market Trends & Patterns</h2>
+                <div class="img-container">
+                    <img src="images/complex.png" alt="Chart Patterns">
+                </div>
+
+                <div class="formula-box">
+                    Trend = Direction of Highs & Lows<br>
+                    Uptrend = Higher Highs + Higher Lows
+                </div>
+
+                <ul>
+                    <li><strong>Morning Star:</strong> 3-candle pattern signaling a bottom (Bearish -> Indecision -> Bullish).</li>
+                    <li><strong>Three White Soldiers:</strong> Three consecutive strong green candles (Continuation).</li>
+                    <li><strong>Doji:</strong> Looks like a cross. Represents market indecision and potential reversal.</li>
+                </ul>
+            </div>
+
+            <div class="controls">
+                <button class="btn-control" onclick="prevCard()">
+                    <span>←</span> Previous
+                </button>
+                <button class="btn-control" onclick="nextCard()">
+                    Next <span>→</span>
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+<script>
+    let current = 0;
+    const cards = document.querySelectorAll(".flashcard");
+    const progressFill = document.getElementById("progress-fill");
+    const stepCount = document.getElementById("step-count");
+
+    function updateUI(index) {
+        // Update Cards
+        cards.forEach(c => c.classList.remove("active"));
+        cards[index].classList.add("active");
+
+        // Update Progress Bar
+        const percentage = ((index + 1) / cards.length) * 100;
+        progressFill.style.width = percentage + "%";
+        
+        // Update Text
+        stepCount.innerText = `Card ${index + 1} of ${cards.length}`;
+    }
+
+    function nextCard() {
+        current = (current + 1) % cards.length;
+        updateUI(current);
+    }
+
+    function prevCard() {
+        current = (current - 1 + cards.length) % cards.length;
+        updateUI(current);
+    }
+
+    // Initialize
+    updateUI(0);
+</script>
+
+</body>
+</html>
