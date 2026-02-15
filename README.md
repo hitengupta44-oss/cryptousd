@@ -110,6 +110,7 @@ Learning trading academy section for beginners to understand the concepts of tra
 
 Chatbot features for help and getting live market insights with understanding market concepts with generalized chat.
 
+<img width="1918" height="860" alt="image" src="https://github.com/user-attachments/assets/763fa90f-594b-4846-b477-47f5bbbb3ef8" />
 <img width="1918" height="855" alt="image" src="https://github.com/user-attachments/assets/7f3db7f2-2aaf-4f25-aac6-bd282a053c29" />
 <img width="1918" height="875" alt="image" src="https://github.com/user-attachments/assets/f0298363-0c5c-4d3b-986a-f1b3d87eb45b" />
 <img width="1918" height="870" alt="image" src="https://github.com/user-attachments/assets/d9e01c26-0aba-4800-9ee9-6771cc7178c4" />
