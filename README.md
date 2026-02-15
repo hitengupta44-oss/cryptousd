@@ -1,6 +1,6 @@
 CryptoUSD is a real-time cryptocurrency monitoring and prediction system that displays live BTC/USD price data along with short-term future price forecasts using a deep learning model.
 
-The goal of this project is to simulate a live trading terminal where users can see the latest market candles and a machine learning-based prediction for the next few minutes. This project combines real-time data handling, time-series forecasting, backend APIs, and an interactive frontend.
+Project is to simulate a live trading terminal where users can see the latest market candles and a machine learning-based prediction for the next few minutes, combines real-time data handling, time-series forecasting, backend APIs, and an interactive frontend.
 
 Fetches live BTC/USD market data
 
@@ -14,15 +14,9 @@ Updates automatically to simulate a live market
 
 Provides a clean and minimal trading-style interface
 
-This project is useful for:
-
 Learning time-series forecasting
 
 Understanding real-time data pipelines
-
-Demonstrating a full-stack ML system
-
-Portfolio or hackathon presentations
 
 Tech Stack
 
@@ -112,16 +106,20 @@ Learn patterns from the last 60 minutes of price data
 
 Predict short-term market movement for the next 10 minutes
 
-<img width="1561" height="575" alt="image" src="https://github.com/user-attachments/assets/c0b453eb-3eb7-4402-a00d-c13325ebf1ca" />
+Learning trading academy section for beginners to understand the concepts of trading like indicatiors and candlestick pattrns.
+
+Chatbot features for help and getting live market insights with understanding market concepts with generalized chat.
+
 <img width="1918" height="872" alt="image" src="https://github.com/user-attachments/assets/edd49418-7e95-4d32-b42b-a43928be41de" />
-<img width="1918" height="875" alt="image" src="https://github.com/user-attachments/assets/f0298363-0c5c-4d3b-986a-f1b3d87eb45b" />
 <img width="1918" height="855" alt="image" src="https://github.com/user-attachments/assets/7f3db7f2-2aaf-4f25-aac6-bd282a053c29" />
+<img width="1918" height="875" alt="image" src="https://github.com/user-attachments/assets/f0298363-0c5c-4d3b-986a-f1b3d87eb45b" />
 <img width="1918" height="870" alt="image" src="https://github.com/user-attachments/assets/d9e01c26-0aba-4800-9ee9-6771cc7178c4" />
 <img width="1918" height="867" alt="image" src="https://github.com/user-attachments/assets/f706432a-13a2-4038-833c-cdc868201383" />
+<img width="1918" height="872" alt="image" src="https://github.com/user-attachments/assets/0bc2bb1b-33d4-41a7-a99a-23125f962865" />
 
 
 
 Live Dashboard Link
-https://cryptoai-phi.vercel.app/
+https://cryptoliveai.vercel.app/
 
 
