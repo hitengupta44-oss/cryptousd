@@ -116,8 +116,6 @@ Chatbot features for help and getting live market insights with understanding ma
 <img width="1918" height="870" alt="image" src="https://github.com/user-attachments/assets/d9e01c26-0aba-4800-9ee9-6771cc7178c4" />
 <img width="1918" height="867" alt="image" src="https://github.com/user-attachments/assets/f706432a-13a2-4038-833c-cdc868201383" />
 <img width="1918" height="872" alt="image" src="https://github.com/user-attachments/assets/0bc2bb1b-33d4-41a7-a99a-23125f962865" />
-<img width="1918" height="872" alt="image" src="https://github.com/user-attachments/assets/0c5f5d16-c26a-470a-81a7-31bd67640564" />
-
 
 
 
