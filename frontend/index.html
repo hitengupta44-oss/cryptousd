@@ -5,74 +5,191 @@
 <title>BTCUSD AI Trading Terminal</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
 
 <style>
-body {
-    margin: 0;
-    background: #000;
-    font-family: Arial, sans-serif;
-    color: #ccc;
+:root {
+    --bg-main: #050505;
+    --bg-sidebar: #0a0a0a;
+    --border-color: #1a1a1a;
+    --accent-gold: #ffd700;
+    --bull-color: #26a69a;
+    --bear-color: #ef5350;
+    --text-dim: #888;
+    --text-bright: #eee;
 }
 
-/* Layout */
+body {
+    margin: 0;
+    background: var(--bg-main);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    color: var(--text-dim);
+    overflow: hidden;
+}
+
 .container {
     display: flex;
     height: 100vh;
 }
 
-/* Left Panel */
 .sidebar {
-    width: 260px;
-    background: #0b0b0b;
-    border-right: 1px solid #1f1f1f;
-    padding: 15px;
-    font-size: 13px;
+    width: 280px;
+    background: var(--bg-sidebar);
+    border-right: 1px solid var(--border-color);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 10px 0 30px rgba(0,0,0,0.5);
+    z-index: 10;
 }
 
 .sidebar h3 {
     color: #fff;
-    margin-top: 0;
+    margin: 0 0 20px 0;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    border-left: 3px solid var(--accent-gold);
+    padding-left: 10px;
+}
+
+.section-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: #444;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    letter-spacing: 1px;
+}
+
+.guide-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+    margin-bottom: 25px;
 }
 
 .legend-item {
-    margin: 6px 0;
+    display: flex;
+    align-items: center;
+    font-size: 11px;
+    color: var(--text-bright);
+    background: rgba(255,255,255,0.02);
+    padding: 6px 10px;
+    border-radius: 4px;
 }
 
 .color-box {
-    display: inline-block;
-    width: 12px;
-    height: 12px;
-    margin-right: 8px;
+    width: 8px;
+    height: 8px;
+    border-radius: 2px;
+    margin-right: 12px;
 }
 
-/* Main Area */
+#hover-panel {
+    margin-top: 10px;
+    padding: 15px;
+    background: #000;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    display: none;
+    animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.intel-header {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.time-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.time-stamp {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--accent-gold);
+    background: rgba(255, 215, 0, 0.1);
+    padding: 2px 6px;
+    border-radius: 3px;
+}
+
+.sentiment-badge {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 3px;
+    font-size: 10px;
+    font-weight: 800;
+    text-align: center;
+}
+
+.hover-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 6px;
+    font-size: 12px;
+}
+
+.hover-label { color: #555; }
+.hover-val { color: var(--text-bright); font-family: 'JetBrains Mono', monospace; }
+
 .main {
     flex: 1;
     display: flex;
     flex-direction: column;
 }
 
-/* Header */
 .header {
     height: 50px;
-    background: #0b0b0b;
-    border-bottom: 1px solid #1f1f1f;
+    background: var(--bg-sidebar);
+    border-bottom: 1px solid var(--border-color);
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0 20px;
+    padding: 0 25px;
+}
+
+.header-title {
+    color: #fff;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.live-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--bull-color);
+    font-size: 11px;
     font-weight: bold;
 }
 
-.live {
-    color: #4caf50;
+.dot {
+    width: 6px;
+    height: 6px;
+    background: var(--bull-color);
+    border-radius: 50%;
+    animation: pulse 2s infinite;
 }
 
-/* Chart */
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.4; }
+    100% { opacity: 1; }
+}
+
 #chart {
-    width: 100%;
-    height: calc(100vh - 50px);
+    flex: 1;
 }
 </style>
 </head>
@@ -80,62 +197,211 @@ body {
 <body>
 
 <div class="container">
-
-    <!-- LEFT PANEL -->
     <div class="sidebar">
-        <h3>Indicator Guide</h3>
+        <h3>Terminal V2</h3>
 
-        <div class="legend-item">
-            <span class="color-box" style="background:#26a69a"></span>
-            Bullish Candle
-        </div>
-        <div class="legend-item">
-            <span class="color-box" style="background:#ef5350"></span>
-            Bearish Candle
-        </div>
-        <div class="legend-item">
-            <span class="color-box" style="background:orange"></span>
-            Future Prediction
+        <div class="section-label">System Signals</div>
+        <div class="guide-grid">
+            <div class="legend-item"><span class="color-box" style="background:lime"></span>BUY (EMA > SMA)</div>
+            <div class="legend-item"><span class="color-box" style="background:red"></span>SELL (EMA < SMA)</div>
+            <div class="legend-item"><span class="color-box" style="background:#00e5ff"></span>EMA 20</div>
+            <div class="legend-item"><span class="color-box" style="background:#ffd700"></span>SMA 50</div>
         </div>
 
-        <hr>
-
-        <div class="legend-item">
-            <span class="color-box" style="background:#00e5ff"></span>
-            EMA20
-        </div>
-        <div class="legend-item">
-            <span class="color-box" style="background:#ffd700"></span>
-            SMA50
-        </div>
-        <div class="legend-item">
-            <span class="color-box" style="background:#b388ff"></span>
-            VWAP
+        <div class="section-label">Market Intel</div>
+        <div id="hover-panel">
+            <div class="intel-header">
+                <div class="time-row">
+                    <span style="font-size: 10px; color: #444;">CANDLE TIME</span>
+                    <div id="time-wrap" class="time-stamp">00:00:00</div>
+                </div>
+                <div id="sentiment-wrap"></div>
+            </div>
+            <div id="hover-stats"></div>
         </div>
 
-        <hr>
-
-        <p>
-        • Model trains on last 24h<br>
-        • Shows last 60 minutes<br>
-        • Predicts next 10 minutes<br>
-        • Updates every minute
-        </p>
+        <div style="margin-top: auto; padding: 15px; background: rgba(255,255,255,0.02); border-radius: 6px; font-size: 11px;">
+            <span style="color: var(--accent-gold); font-weight: bold;">ENGINE STATUS:</span><br>
+            • Logic: Crossover Detection<br>
+            • Feed: Binance Real-Time<br>
+            • AI Forecast: Active
+        </div>
     </div>
 
-    <!-- MAIN -->
     <div class="main">
         <div class="header">
-            BTCUSD — AI Trading Terminal
-            <span class="live">● LIVE</span>
+            <div class="header-title">BTC / USD <span style="color:#444; margin-left:10px;">CORE_STRATEGY_V2</span></div>
+            <div class="live-indicator"><div class="dot"></div> LIVE FEED</div>
         </div>
-
         <div id="chart"></div>
     </div>
-
 </div>
 
-<script src="script.js"></script>
+<script>
+const API = "https://cryptoliveusdt.onrender.com/data";
+let currentData = [];
+
+async function loadChart() {
+    try {
+        const res = await fetch(API);
+        let data = await res.json();
+        if (!data || data.length === 0) return;
+
+        currentData = data;
+        data.forEach(d => d.time = new Date(d.time));
+
+        // Process Signals via Crossover Logic
+        for (let i = 1; i < data.length; i++) {
+            const prev = data[i-1];
+            const curr = data[i];
+            if (prev.ema20 && prev.sma50 && curr.ema20 && curr.sma50) {
+                if (prev.ema20 <= prev.sma50 && curr.ema20 > curr.sma50) curr.signal = "BUY";
+                else if (prev.ema20 >= prev.sma50 && curr.ema20 < curr.sma50) curr.signal = "SELL";
+            }
+        }
+
+        const real = data.filter(d => d.type === "real").slice(-60);
+        const pred = data.filter(d => d.type === "prediction").slice(-10);
+        const combined = [...real, ...pred];
+        const safe = (arr, key) => arr.map(d => d[key] ?? null);
+
+        // CANDLESTICK TRACES
+        const realTrace = {
+            type: "candlestick",
+            x: real.map(d => d.time),
+            open: safe(real, "open"),
+            high: safe(real, "high"),
+            low: safe(real, "low"),
+            close: safe(real, "close"),
+            increasing: { line: { color: "#26a69a" } },
+            decreasing: { line: { color: "#ef5350" } },
+            name: "Price", hoverinfo: 'none'
+        };
+
+        const predTrace = {
+            type: "candlestick",
+            x: pred.map(d => d.time),
+            open: safe(pred, "open"),
+            high: safe(pred, "high"),
+            low: safe(pred, "low"),
+            close: safe(pred, "close"),
+            increasing: { line: { color: "green", dash: 'dot' } },
+            decreasing: { line: { color: "olive", dash: 'dot' } },
+            name: "Prediction", hoverinfo: 'none'
+        };
+
+        // SIGNAL MARKERS
+        const buys = combined.filter(d => d.signal === "BUY");
+        const sells = combined.filter(d => d.signal === "SELL");
+
+        const buyTrace = {
+            x: buys.map(d => d.time),
+            y: buys.map(d => d.low * 0.9997),
+            mode: "markers",
+            marker: { symbol: "triangle-up", color: "lime", size: 14, line: {color: '#000', width: 1} },
+            name: "BUY Signal", hoverinfo: 'none'
+        };
+
+        const sellTrace = {
+            x: sells.map(d => d.time),
+            y: sells.map(d => d.high * 1.0003),
+            mode: "markers",
+            marker: { symbol: "triangle-down", color: "red", size: 14, line: {color: '#000', width: 1} },
+            name: "SELL Signal", hoverinfo: 'none'
+        };
+
+        // MOVING AVERAGES
+        const indicators = [
+            { key: "ema20", color: "#00e5ff", name: "EMA 20" },
+            { key: "sma50", color: "#ffd700", name: "SMA 50" }
+        ].map(conf => ({
+            x: combined.map(d => d.time),
+            y: safe(combined, conf.key),
+            type: "scatter", mode: "lines",
+            line: { color: conf.color, width: 2, shape: 'spline' },
+            name: conf.name, hoverinfo: 'skip'
+        }));
+
+        const rsiTrace = {
+            x: combined.map(d => d.time),
+            y: safe(combined, "rsi"),
+            type: "scatter", mode: "lines",
+            line: { color: "#ff9800", width: 1.5 },
+            xaxis: "x2", yaxis: "y2", hoverinfo: 'skip'
+        };
+
+        const layout = {
+            paper_bgcolor: "#050505",
+            plot_bgcolor: "#050505",
+            font: { color: "#555", size: 10 },
+            margin: { t: 30, b: 30, l: 10, r: 60 },
+            hovermode: 'x',
+            xaxis: { rangeslider: { visible: false }, gridcolor: "#111", zeroline: false },
+            yaxis: { domain: [0.35, 1], gridcolor: "#111", side: "right", zeroline: false },
+            yaxis2: { domain: [0, 0.25], range: [0, 100], gridcolor: "#111", side: "right", zeroline: false },
+            xaxis2: { anchor: "y2", visible: false },
+            showlegend: false
+        };
+
+        Plotly.react("chart", [realTrace, predTrace, buyTrace, sellTrace, ...indicators, rsiTrace], layout, { responsive: true, displayModeBar: false });
+
+        const chartDiv = document.getElementById('chart');
+        chartDiv.on('plotly_hover', (e) => {
+            if(!e.points || !e.points[0]) return;
+            const d = currentData.find(item => new Date(item.time).getTime() === new Date(e.points[0].x).getTime());
+            if(d) updateUI(d);
+        });
+        chartDiv.on('plotly_unhover', () => { document.getElementById('hover-panel').style.display = 'none'; });
+
+    } catch (err) { console.error("Update Error:", err); }
+}
+
+function updateUI(d) {
+    const panel = document.getElementById('hover-panel');
+    const stats = document.getElementById('hover-stats');
+    const sentWrap = document.getElementById('sentiment-wrap');
+    const timeWrap = document.getElementById('time-wrap');
+    panel.style.display = 'block';
+
+    const format = (v) => v ? v.toLocaleString(undefined, {minimumFractionDigits: 2}) : "---";
+    
+    // Time Output
+    const timeObj = new Date(d.time);
+    timeWrap.innerText = timeObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+
+    // Crossover Status Logic
+    let sentiment = "Stable Consolidation";
+    let sCol = "#888";
+    
+    if (d.signal === "BUY") {
+        sentiment = "EMA CROSSOVER: BUY";
+        sCol = "lime";
+    } else if (d.signal === "SELL") {
+        sentiment = "EMA CROSSOVER: SELL";
+        sCol = "#ef5350";
+    } else if (d.ema20 > d.sma50) {
+        sentiment = "Bullish Momentum";
+        sCol = "#26a69a";
+    } else if (d.ema20 < d.sma50) {
+        sentiment = "Bearish Momentum";
+        sCol = "#ef5350";
+    }
+
+    sentWrap.innerHTML = `<div class="sentiment-badge" style="background:${sCol}22; color:${sCol}; border: 1px solid ${sCol}55">${sentiment}</div>`;
+    
+    stats.innerHTML = `
+        <div class="hover-row"><span class="hover-label">Price</span><span class="hover-val" style="color:#fff">$${format(d.close)}</span></div>
+        <div class="hover-row"><span class="hover-label">EMA 20</span><span class="hover-val" style="color:#00e5ff">${format(d.ema20)}</span></div>
+        <div class="hover-row"><span class="hover-label">SMA 50</span><span class="hover-val" style="color:#ffd700">${format(d.sma50)}</span></div>
+        <div style="height:1px; background:#222; margin:10px 0;"></div>
+        <div class="hover-row"><span class="hover-label">RSI</span><span class="hover-val" style="color:#ff9800">${d.rsi ? d.rsi.toFixed(1) : '---'}</span></div>
+        <div class="hover-row"><span class="hover-label">Spread</span><span class="hover-val">${(d.ema20 - d.sma50).toFixed(2)}</span></div>
+    `;
+}
+
+setInterval(loadChart, 10000);
+loadChart();
+</script>
 
 </body>
 </html>
